@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0d1a">
+<title>Glassbeat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Icons -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></symbol>
+  <symbol id="i-lib" viewBox="0 0 24 24"><path d="M4 4v16M9 4v16M14 6l5 14"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M7 4.5v15l13-7.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M6 4h4v16H6zM14 4h4v16h-4z"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M6 5l10 7-10 7zM18 5v14"/></symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M18 5L8 12l10 7zM6 5v14"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></symbol>
+</svg>
+
+<div class="orbs" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<nav class="nav glass" aria-label="Main">
+  <button class="on" aria-current="page"><svg class="ic"><use href="#i-home"/></svg><span>Home</span></button>
+  <button><svg class="ic"><use href="#i-search"/></svg><span>Search</span></button>
+  <button><svg class="ic"><use href="#i-lib"/></svg><span>Library</span></button>
+  <button><svg class="ic"><use href="#i-plus"/></svg><span>Create</span></button>
+</nav>
+
+<main class="main">
+  <header class="top">
+    <h1 id="greeting">Good evening</h1>
+    <button class="avatar glass" aria-label="Your profile"><svg class="ic"><use href="#i-user"/></svg></button>
+  </header>
+
+  <div class="chips" role="group" aria-label="Filter">
+    <button class="chip" aria-pressed="true" data-f="all">All</button>
+    <button class="chip" aria-pressed="false" data-f="music">Music</button>
+    <button class="chip" aria-pressed="false" data-f="podcast">Podcasts</button>
+  </div>
+
+  <section aria-labelledby="h-pick">
+    <h2 id="h-pick">Pick up where you left off</h2>
+    <div class="quick" id="quick"></div>
+  </section>
+
+  <section aria-labelledby="h-jump">
+    <h2 id="h-jump">Jump back in</h2>
+    <div class="row" id="jump"></div>
+  </section>
+
+  <section aria-labelledby="h-made">
+    <h2 id="h-made">Made for you</h2>
+    <div class="row" id="made"></div>
+  </section>
+</main>
+
+<!-- Mini player -->
+<div class="mini glass" id="mini" role="button" tabindex="0" aria-label="Open player">
+  <div class="art sm"></div>
+  <div class="meta"><strong class="t-title">Track title</strong><span class="t-artist">Artist name</span></div>
+  <button class="ib like" aria-label="Like" aria-pressed="false"><svg class="ic"><use href="#i-heart"/></svg></button>
+  <button class="ib play" aria-label="Play"><svg class="ic"><use href="#i-play"/></svg></button>
+  <div class="bar"><b></b></div>
+</div>
+
+<!-- Full player -->
+<section class="sheet glass" id="sheet" aria-hidden="true" aria-label="Now playing">
+  <button class="ib close" aria-label="Close player"><svg class="ic"><use href="#i-down"/></svg></button>
+  <div class="art xl"></div>
+  <div class="np">
+    <div class="meta"><strong class="t-title">Track title</strong><span class="t-artist">Artist name</span></div>
+    <button class="ib like" aria-label="Like" aria-pressed="false"><svg class="ic"><use href="#i-heart"/></svg></button>
+  </div>
+  <input type="range" id="seek" min="0" max="200" value="0" aria-label="Seek">
+  <div class="times"><span id="cur">0:00</span><span id="dur">3:20</span></div>
+  <div class="ctrl">
+    <button class="ib" id="prev" aria-label="Previous"><svg class="ic"><use href="#i-prev"/></svg></button>
+    <button class="ib big play" aria-label="Play"><svg class="ic"><use href="#i-play"/></svg></button>
+    <button class="ib" id="next" aria-label="Next"><svg class="ic"><use href="#i-next"/></svg></button>
+  </div>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>

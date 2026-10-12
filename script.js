@@ -1,6 +1,6 @@
 // Placeholder content only. Replace with your own titles and cover images.
 const items = [
-  { type: 'music',   title: 'Late night drive',   sub: 'Playlist' },
+  { type: 'music',   title: 'Six Forty Seven',    sub: 'Single, Instupendo', artist: 'Instupendo', src: 'music/six-forty-seven.mp3' },
   { type: 'music',   title: 'Morning light',      sub: 'Album, Artist name' },
   { type: 'podcast', title: 'Short stories',      sub: 'Podcast, Host name' },
   { type: 'music',   title: 'Study loops',        sub: 'Playlist' },
@@ -44,39 +44,55 @@ $$('.nav button').forEach(b => b.addEventListener('click', () => {
   b.classList.add('on'); b.setAttribute('aria-current', 'page');
 }));
 
-// Player
+// Player: tracks with a "src" play real audio, the rest simulate playback
 const queue = [...items, ...made];
-const LEN = 200;
-let idx = 0, pos = 0, playing = false, timer;
+const audio = new Audio();
 const sheet = $('#sheet'), mini = $('#mini'), seek = $('#seek');
+let idx = 0, pos = 0, len = 200, playing = false, timer;
+const real = () => !!queue[idx].src;
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 function draw() {
-  const p = (pos / LEN * 100) + '%';
+  const p = (pos / len * 100) + '%';
   mini.style.setProperty('--p', p);
   seek.style.setProperty('--p', p);
-  seek.value = pos;
+  seek.max = len; seek.value = pos;
   $('#cur').textContent = fmt(pos);
+  $('#dur').textContent = fmt(len);
   $$('.play use').forEach(u => u.setAttribute('href', playing ? '#i-pause' : '#i-play'));
   $$('.play').forEach(b => b.setAttribute('aria-label', playing ? 'Pause' : 'Play'));
 }
 function load(i) {
-  idx = (i + queue.length) % queue.length; pos = 0;
-  $$('.t-title').forEach(e => e.textContent = queue[idx].title);
-  $$('.t-artist').forEach(e => e.textContent = 'Artist name');
+  idx = (i + queue.length) % queue.length; pos = 0; len = 200;
+  const t = queue[idx];
+  audio.pause(); clearInterval(timer);
+  if (t.src) audio.src = t.src; else audio.removeAttribute('src');
+  $$('.t-title').forEach(e => e.textContent = t.title);
+  $$('.t-artist').forEach(e => e.textContent = t.artist || 'Artist name');
   draw();
 }
 function toggle(force) {
   playing = force ?? !playing;
   clearInterval(timer);
-  if (playing) timer = setInterval(() => { pos += 1; if (pos >= LEN) { load(idx + 1); } draw(); }, 1000);
+  if (real()) {
+    if (playing) audio.play().catch(() => { playing = false; draw(); });
+    else audio.pause();
+  } else if (playing) {
+    timer = setInterval(() => { pos += 1; if (pos >= len) { load(idx + 1); toggle(true); } draw(); }, 1000);
+  }
   draw();
 }
+audio.addEventListener('loadedmetadata', () => { len = audio.duration; draw(); });
+audio.addEventListener('timeupdate', () => { pos = audio.currentTime; draw(); });
+audio.addEventListener('ended', () => { load(idx + 1); toggle(true); });
 
 $$('.play').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); toggle(); }));
-$('#next').onclick = () => { load(idx + 1); draw(); };
-$('#prev').onclick = () => { pos > 3 ? (pos = 0) : load(idx - 1); draw(); };
-seek.oninput = () => { pos = +seek.value; draw(); };
+$('#next').onclick = () => { const was = playing; load(idx + 1); toggle(was); };
+$('#prev').onclick = () => {
+  if (pos > 3) { pos = 0; if (real()) audio.currentTime = 0; draw(); }
+  else { const was = playing; load(idx - 1); toggle(was); }
+};
+seek.oninput = () => { pos = +seek.value; if (real()) audio.currentTime = pos; draw(); };
 $$('.like').forEach(b => b.addEventListener('click', e => {
   e.stopPropagation();
   const on = b.getAttribute('aria-pressed') !== 'true';

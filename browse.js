@@ -35,7 +35,7 @@ function head(a, kind, ctx) {
 const body = h => { const b = $('#dbody'); if (!b) return; b.innerHTML = h; paint(); gb.markSaved(view); };
 const fail = e => body(note(e.message === '429' ? 'Too many requests. Wait a moment and try again.' : e.message === 'signed out' ? 'Please log in again.' : 'Could not load this page (error ' + e.message + '). Try again.'));
 
-const row = (x, cover) => `<div class="item glass" data-uri="${esc(x.uri)}"><button class="open" aria-label="Play ${esc(x.name)}"><div class="art sm" data-img="${esc(cover)}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc(names(x))}</span></div></button><a class="ib ext" href="${esc((x.external_urls || {}).spotify || '#')}" target="_blank" rel="noopener" aria-label="Open in Spotify"><svg class="ic"><use href="#i-ext"/></svg></a><button class="ib sv" aria-label="Save to library" aria-pressed="false"><svg class="ic"><use href="#i-heart"/></svg></button><button class="ib ad" aria-label="Add to playlist"><svg class="ic"><use href="#i-plus"/></svg></button></div>`;
+const row = (x, cover, rm) => `<div class="item glass" data-uri="${esc(x.uri)}"><button class="open" aria-label="Play ${esc(x.name)}"><div class="art sm" data-img="${esc(cover)}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc(names(x))}</span></div></button><a class="ib ext" href="${esc((x.external_urls || {}).spotify || '#')}" target="_blank" rel="noopener" aria-label="Open in Spotify"><svg class="ic"><use href="#i-ext"/></svg></a><button class="ib sv" aria-label="Save to library" aria-pressed="false"><svg class="ic"><use href="#i-heart"/></svg></button><button class="ib ad" aria-label="Add to playlist"><svg class="ic"><use href="#i-plus"/></svg></button>${rm ? '<button class="ib rm" aria-label="Remove from playlist"><svg class="ic"><use href="#i-x"/></svg></button>' : ''}</div>`;
 
 const albumRow = x => `<button class="item glass opn" data-kind="album" data-id="${esc(x.id)}" data-name="${esc(x.name)}" data-sub="${esc('Album, ' + names(x))}" data-cover="${esc(pic(x.images))}" data-url="${esc((x.external_urls || {}).spotify || '')}"><div class="art sm" data-img="${esc(pic(x.images))}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc((x.release_date || '').slice(0, 4))}</span></div></button>`;
 
@@ -74,7 +74,46 @@ async function artist(a) {
     || note('Nothing found for this artist.'));
 }
 
+async function playlist(a) {
+  head(a, 'Playlist', 'spotify:playlist:' + a.id);
+  view.dataset.pid = a.id;
+  const own = a.own === '1';
+  $('#dplay').parentElement.insertAdjacentHTML('beforeend', own
+    ? '<button class="login glass" id="dren">Rename</button><button class="login glass" id="ddel">Delete</button>'
+    : '<button class="login glass" id="ddel">Remove</button>');
+  const ren = $('#dren');
+  if (ren) ren.onclick = async () => {
+    const n = (prompt('Rename playlist', a.name) || '').trim();
+    if (!n || n === a.name) return;
+    try { await gb.api('/playlists/' + encodeURIComponent(a.id), 'PUT', { name: n }); a.name = n; $('.dname').textContent = n; toast('Renamed'); }
+    catch (e) { toast('Could not rename it (error ' + e.message + ').'); }
+  };
+  $('#ddel').onclick = async () => {
+    if (!confirm(own ? 'Delete this playlist?' : 'Remove this playlist from your library?')) return;
+    try {
+      await gb.api('/me/library?uris=' + encodeURIComponent('spotify:playlist:' + a.id), 'DELETE');
+      toast(own ? 'Playlist deleted' : 'Removed from your library');
+      back();
+      setTimeout(() => { if (!$('#view-library').hidden) gb.openLibrary(); }, 50);
+    } catch (e) { toast('Could not remove it (error ' + e.message + ').'); }
+  };
+  try {
+    const d = await gb.api(`/playlists/${encodeURIComponent(a.id)}/items?limit=50`);
+    const l = (d.items || []).map(i => i.item || i.track).filter(x => x && String(x.uri).startsWith('spotify:track'));
+    body(l.length ? '<div class="list">' + l.map(x => row(x, pic((x.album || {}).images), own)).join('') + '</div>' : note('No songs here yet.'));
+  } catch (e) {
+    body(note(e.message === '403' ? 'Spotify only shows the songs of playlists you own or share. You can still press Play.' : 'Could not load this playlist (error ' + e.message + ').'));
+  }
+}
+
 view.addEventListener('click', e => {
+  const r = e.target.closest('.rm');
+  if (r) {
+    const li = r.closest('.item');
+    return gb.api('/playlists/' + encodeURIComponent(view.dataset.pid) + '/items', 'DELETE', { items: [{ uri: li.dataset.uri }] })
+      .then(() => { li.remove(); toast('Removed from playlist'); })
+      .catch(er => toast('Could not remove it (error ' + er.message + ').'));
+  }
   const o = e.target.closest('button.open');
   if (o) {
     const uri = o.closest('.item').dataset.uri;
@@ -88,8 +127,8 @@ view.addEventListener('click', e => {
 document.addEventListener('click', e => {
   const o = e.target.closest('.opn');
   if (!o) return;
-  const d = o.dataset, a = { id: d.id, name: d.name, sub: d.sub, img: d.cover, url: d.url };
-  go(() => d.kind === 'artist' ? artist(a) : album(a));
+  const d = o.dataset, a = { id: d.id, name: d.name, sub: d.sub, img: d.cover, url: d.url, own: d.own };
+  go(() => d.kind === 'artist' ? artist(a) : d.kind === 'playlist' ? playlist(a) : album(a));
 });
 document.querySelectorAll('.nav button').forEach((b, i) => b.addEventListener('click', () => {
   if (i > 2 && prev) prev.hidden = false;

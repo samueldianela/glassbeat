@@ -41,7 +41,7 @@ const loaders = {
     const all = (d.items || []).filter(Boolean);
     mine = ownOnly(all, m);
     say('<button class="login glass newpl" id="np">New playlist</button>' + (all.length ? list(all.map(p =>
-      `<button class="item glass pl" data-id="${esc(p.id)}"><div class="art sm" data-img="${esc(pic(p.images))}"></div><div class="meta"><strong>${esc(p.name)}</strong><span>${(p.items || p.tracks || {}).total ?? 0} songs</span></div></button>`)) : note('No playlists yet.')));
+      `<button class="item glass opn" data-kind="playlist" data-id="${esc(p.id)}" data-name="${esc(p.name)}" data-sub="${(p.items || p.tracks || {}).total ?? 0} songs" data-cover="${esc(pic(p.images))}" data-url="${esc((p.external_urls || {}).spotify || '')}" data-own="${(p.owner || {}).id === m.id ? 1 : 0}"><div class="art sm" data-img="${esc(pic(p.images))}"></div><div class="meta"><strong>${esc(p.name)}</strong><span>${(p.items || p.tracks || {}).total ?? 0} songs</span></div></button>`)) : note('No playlists yet.')));
     $('#np').onclick = newPlaylist;
   },
   async tracks() {
@@ -71,7 +71,8 @@ async function show(t) {
 
 async function detail(id, name) {
   say(note('Loading…'));
-  const back = '<div class="dact"><button class="login glass" id="bk">Back</button><button class="login glass" id="pp">Play</button></div><h2>' + esc(name) + '</h2>';
+  const own = mine.some(p => p.id === id);
+  const back = '<div class="dact"><button class="login glass" id="bk">Back</button><button class="login glass" id="pp">Play</button>' + (own ? '<button class="login glass" id="rn">Rename</button><button class="login glass" id="dl">Delete</button>' : '') + '</div><h2>' + esc(name) + '</h2>';
   try {
     const d = await gb.api(`/playlists/${encodeURIComponent(id)}/items?limit=50`);
     const l = (d.items || []).map(i => i.item || i.track).filter(x => x && String(x.uri).startsWith('spotify:track'));
@@ -83,6 +84,21 @@ async function detail(id, name) {
   }
   const bk = $('#bk'); if (bk) bk.onclick = () => show('playlists');
   const pp = $('#pp'); if (pp) pp.onclick = () => gb.play(null, null, 'spotify:playlist:' + id);
+  const rn = $('#rn'), dl = $('#dl');
+  if (rn) rn.onclick = async () => {
+    const nn = (prompt('New name', name) || '').trim();
+    if (!nn || nn === name) return;
+    try {
+      await gb.api('/playlists/' + encodeURIComponent(id), 'PUT', { name: nn });
+      mine.forEach(p => { if (p.id === id) p.name = nn; });
+      toast('Renamed'); detail(id, nn);
+    } catch { toast('Could not rename this playlist.'); }
+  };
+  if (dl) dl.onclick = async () => {
+    if (!confirm('Remove "' + name + '" from your library?')) return;
+    try { await gb.api('/me/library?uris=' + encodeURIComponent('spotify:playlist:' + id), 'DELETE'); mine = []; toast('Playlist deleted'); show('playlists'); }
+    catch { toast('Could not delete this playlist.'); }
+  };
 }
 
 async function newPlaylist() {
@@ -118,11 +134,17 @@ async function pickPlaylist(uri) {
   }
   const dlg = document.createElement('div');
   dlg.className = 'pick';
-  dlg.innerHTML = '<div class="sheetp glass"><h2>Add to playlist</h2>' + (mine.length
+  dlg.innerHTML = '<div class="sheetp glass"><h2>Add song</h2><button class="opt q">Play next (add to queue)</button>' + (mine.length
     ? mine.map(p => `<button class="opt" data-id="${esc(p.id)}">${esc(p.name)}</button>`).join('')
     : note('Create a playlist first with the Create button.')) + '<button class="opt cancel">Cancel</button></div>';
   dlg.onclick = async e => {
     if (e.target === dlg || e.target.classList.contains('cancel')) return dlg.remove();
+    if (e.target.closest('.opt.q')) {
+      dlg.remove();
+      try { await gb.api('/me/player/queue?uri=' + encodeURIComponent(uri), 'POST'); toast('Added to your queue'); }
+      catch (er) { toast(er.message === '404' ? 'Start playing a song first, then add to the queue.' : 'Could not add to the queue.'); }
+      return;
+    }
     const o = e.target.closest('.opt[data-id]');
     if (!o) return;
     dlg.remove();

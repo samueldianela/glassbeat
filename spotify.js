@@ -1,5 +1,5 @@
 // Spotify login (PKCE) and profile. Runs fully in the browser: no server, no secret.
-const SCOPES = 'user-read-private user-library-read user-library-modify user-follow-read playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public streaming user-read-email user-modify-playback-state user-read-playback-state';
+const SCOPES = 'user-read-private user-library-read user-library-modify user-follow-read playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public streaming user-read-email user-modify-playback-state user-read-playback-state user-read-recently-played user-top-read';
 const CLIENT_ID = ''; // Optional: paste your Client ID here. If empty, the page asks once and remembers it.
 const REDIRECT = location.origin + location.pathname.replace(/index\.html$/, '');
 
@@ -83,7 +83,9 @@ function show(me) {
   av.classList.remove('has-img');
   const first = me && (me.display_name || '').split(' ')[0];
   el('#greeting').textContent = first ? baseGreeting + ', ' + first : baseGreeting;
-  if (!me) return;
+  if (!me) { gb.me = null; window.dispatchEvent(new Event('gb:signedout')); return; }
+  gb.me = me;
+  window.dispatchEvent(new Event('gb:signedin'));
   el('#uname').textContent = me.display_name || 'Your profile';
   const img = me.images && me.images[0];
   if (img) { av.style.backgroundImage = `url("${img.url}")`; av.classList.add('has-img'); }

@@ -3,7 +3,7 @@
 (() => {
 const SDK = 'https://sdk.scdn.co/spotify-player.js';
 const sp = { active: false };
-let player = null, deviceId = null, sdkP = null, mode = 'sdk', pt = null, released = true;
+let player = null, deviceId = null, sdkP = null, mode = 'sdk', pt = null, released = true, curUri = null;
 let S = { playing: false, pos: 0, len: 1, t0: 0 };
 const cur = () => Math.min(S.pos + (S.playing ? (Date.now() - S.t0) / 1000 : 0), S.len);
 const pic = imgs => ((imgs || [])[0] || {}).url || '';
@@ -13,6 +13,12 @@ function push(o) {
   S = { playing: !!o.playing, pos: o.pos || 0, len: o.len || 1, t0: Date.now() };
   sp.active = true;
   glassUI.set(o);
+  try {
+    if ('mediaSession' in navigator) {
+      if (o.title != null) navigator.mediaSession.metadata = new MediaMetadata({ title: o.title, artist: o.artist || '', artwork: o.img ? [{ src: o.img, sizes: '640x640' }] : [] });
+      navigator.mediaSession.playbackState = o.playing ? 'playing' : 'paused';
+    }
+  } catch {}
 }
 setInterval(() => { if (sp.active && S.playing) glassUI.set({ playing: true, pos: cur(), len: S.len }); }, 500);
 
@@ -29,6 +35,7 @@ function onState(s) {
   const t = s.track_window && s.track_window.current_track;
   if (released || !t) return;
   mode = 'sdk';
+  track(t.uri);
   push({ title: t.name, artist: artists(t), img: pic(t.album && t.album.images), playing: !s.paused, pos: s.position / 1000, len: s.duration / 1000 });
 }
 function ensureSdk() {
@@ -71,6 +78,7 @@ async function poll() {
   try {
     const s = await gb.api('/me/player');
     const t = s && s.item;
+    if (t && !released) track(t.uri);
     if (t && !released) push({ title: t.name, artist: artists(t), img: pic(t.album && t.album.images), playing: !!s.is_playing, pos: (s.progress_ms || 0) / 1000, len: (t.duration_ms || 1) / 1000 });
   } catch {}
   pt = setTimeout(poll, 3000);
@@ -114,6 +122,87 @@ Object.assign(sp, {
     try { mode === 'sdk' ? player.pause() : gb.api('/me/player/pause', 'PUT').catch(() => {}); } catch {}
   }
 });
+// The heart in the player saves the current Spotify song
+const likes = () => [...document.querySelectorAll('.like')];
+function track(uri) {
+  if (!uri || uri === curUri) return;
+  curUri = uri;
+  gb.api('/me/library/contains?uris=' + encodeURIComponent(uri))
+    .then(v => likes().forEach(l => l.setAttribute('aria-pressed', !!(v && v[0])))).catch(() => {});
+}
+likes().forEach(b => b.addEventListener('click', e => {
+  if (!sp.active || !curUri) return;
+  e.stopImmediatePropagation();
+  gb.toggleSave(curUri, b).then(() => { const on = b.getAttribute('aria-pressed'); likes().forEach(l => l.setAttribute('aria-pressed', on)); });
+}, true));
+
+// Shuffle and repeat
+const shuf = document.getElementById('shuffle'), rep = document.getElementById('repeat');
+const need = () => sp.active || (toast('Shuffle and repeat work while a Spotify song is playing.'), false);
+let shuffleOn = false, repeatM = 'off';
+shuf.onclick = () => {
+  if (!need()) return;
+  shuffleOn = !shuffleOn; shuf.setAttribute('aria-pressed', shuffleOn);
+  gb.api('/me/player/shuffle?state=' + shuffleOn, 'PUT').catch(e => { shuffleOn = !shuffleOn; shuf.setAttribute('aria-pressed', shuffleOn); fail(e); });
+};
+rep.onclick = () => {
+  if (!need()) return;
+  const was = repeatM;
+  repeatM = { off: 'context', context: 'track', track: 'off' }[was];
+  rep.dataset.m = repeatM; rep.setAttribute('aria-pressed', repeatM !== 'off');
+  gb.api('/me/player/repeat?state=' + repeatM, 'PUT').catch(e => { repeatM = was; rep.dataset.m = was; rep.setAttribute('aria-pressed', was !== 'off'); fail(e); });
+};
+
+// Lock screen and headphone buttons, and the space bar
+if ('mediaSession' in navigator) {
+  const h = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch {} };
+  h('play', () => { if (sp.active && !S.playing) sp.toggle(); });
+  h('pause', () => { if (sp.active && S.playing) sp.toggle(); });
+  h('nexttrack', () => { if (sp.active) sp.next(); });
+  h('previoustrack', () => { if (sp.active) sp.prev(); });
+  h('seekto', d => { if (sp.active) sp.seek(d.seekTime); });
+}
+document.addEventListener('keydown', e => {
+  if (e.code !== 'Space' || /^(INPUT|TEXTAREA|BUTTON|A|SELECT)$/.test(e.target.tagName)) return;
+  e.preventDefault();
+  document.querySelector('.mini .play').click();
+});
+
+// Play on another device
+const escH = s => String(s ?? '').replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
+document.getElementById('dev').onclick = async () => {
+  let list;
+  try { list = ((await gb.api('/me/player/devices')) || {}).devices || []; } catch (e) { return fail(e); }
+  const dlg = document.createElement('div');
+  dlg.className = 'pick';
+  const label = d => (d.id === deviceId ? 'This browser (Glassbeat)' : d.name) + (d.is_active ? ' (playing)' : '');
+  dlg.innerHTML = '<div class="sheetp glass"><h2>Play on</h2>' + (list.length
+    ? list.map(d => `<button class="opt" data-id="${escH(d.id)}">${escH(label(d))}</button>`).join('')
+    : '<p class="note">No devices found. Open Spotify on a device first.</p>') + '<button class="opt cancel">Cancel</button></div>';
+  dlg.onclick = async e => {
+    if (e.target === dlg || e.target.classList.contains('cancel')) return dlg.remove();
+    const o = e.target.closest('.opt[data-id]');
+    if (!o) return;
+    dlg.remove();
+    try {
+      await gb.api('/me/player', 'PUT', { device_ids: [o.dataset.id], play: true });
+      mode = o.dataset.id === deviceId ? 'sdk' : 'remote';
+      released = false;
+      if (mode === 'remote') setTimeout(poll, 700);
+      toast('Playing on ' + o.textContent);
+    } catch (er) { fail(er); }
+  };
+  document.body.appendChild(dlg);
+};
+
+// Add a song to the play queue
+gb.enqueue = async uri => {
+  try {
+    await gb.api('/me/player/queue?uri=' + encodeURIComponent(uri) + (mode === 'sdk' && deviceId ? '&device_id=' + encodeURIComponent(deviceId) : ''), 'POST');
+    toast('Added to queue');
+  } catch (e) { e.message === '404' ? toast('Play a song first, then add to the queue.') : fail(e); }
+};
+
 gb.sp = sp;
 gb.play = play;
 })();

@@ -191,3 +191,28 @@ html{font-size:clamp(16px,calc(12px + .9vmin),28px)}
   .sheet .times{grid-column:2;grid-row:5}
   .sheet .ctrl{grid-column:2;grid-row:6;margin:1.5rem 0 0;align-self:start}
 }
+
+/* Player extras */
+.ctrl{gap:.5rem}
+.ctrl .ib:not(.big){width:2.75rem;height:2.75rem}
+#shuffle,#repeat{position:relative;color:var(--muted)}
+#shuffle[aria-pressed=true],#repeat[aria-pressed=true]{color:#fff;background:rgba(255,255,255,.18)}
+#repeat[data-m=track]::after{content:'1';position:absolute;right:.6rem;top:.45rem;font-size:.6rem;font-weight:800}
+@media (max-width:360px){.sheet{padding-inline:1rem}.ctrl{gap:.2rem}}
+
+/* Extras: shuffle and repeat, save buttons, recent searches */
+.ctrl{gap:.75rem}
+#shuf[aria-pressed=true],#rep[aria-pressed=true]{color:var(--aqua)}
+#rep{position:relative}
+#rep[data-mode=track]::after{content:'1';position:absolute;right:.5rem;top:.5rem;font-size:.6rem;font-weight:800;color:var(--aqua)}
+.login[aria-pressed=true]{background:var(--text);color:var(--ink);border-color:transparent}
+.recents{display:flex;flex-wrap:wrap;gap:.5rem;margin:1rem 0}
+.recent{padding:.5rem 1rem;border-radius:99px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-size:.9rem}
+.recent.clear{color:var(--muted);background:none;border-style:dashed}
+.quick .note{grid-column:1/-1}
+
+/* Devices button, playlist rows and tiles */
+.sr{display:flex;align-items:center;gap:.4rem}
+#dev{color:var(--muted)}
+.item .rm{color:var(--muted)}
+button.tile{font:inherit;color:inherit;text-align:left;width:100%}

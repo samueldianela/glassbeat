@@ -5,6 +5,10 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0)
 const mmss = ms => { const s = Math.round(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
 const pic = imgs => ((imgs || [])[1] || (imgs || [])[0] || {}).url || '';
 const names = x => (x.artists || []).map(a => a.name).join(', ');
+const RK = 'gb_recent';
+const recents = () => { try { return JSON.parse(localStorage.getItem(RK)) || []; } catch { return []; } };
+const saveRecent = t => { try { localStorage.setItem(RK, JSON.stringify([t, ...recents().filter(x => x.toLowerCase() !== t.toLowerCase())].slice(0, 8))); } catch {} };
+const hint = () => { const r = recents(); return HINT + (r.length ? '<div class="recents">' + r.map(t => `<button class="recent" data-t="${esc(t)}">${esc(t)}</button>`).join('') + '<button class="recent clear" data-clear="1">Clear</button></div>' : ''); };
 const HINT = '<p class="note">Search for songs, artists and albums.</p>';
 const box = $q('#sres');
 const navBtns = [...document.querySelectorAll('.nav button')];
@@ -17,7 +21,7 @@ function needLogin() {
 }
 function render() {
   if (!gb.signedIn()) return needLogin();
-  if (!box.children.length || box.querySelector('#sl')) say(HINT);
+  if (!box.children.length || box.querySelector('#sl')) say(hint());
 }
 
 // Switching between Home and Search
@@ -67,7 +71,7 @@ async function run(term) {
   say('<p class="note">Searching…</p>');
   try {
     const d = await gb.api('/search?' + new URLSearchParams({ q: term, type: 'track,artist,album', limit: 10 }));
-    if (n === seq) show(d);
+    if (n === seq) { show(d); saveRecent(term); }
   } catch (e) {
     if (n !== seq) return;
     if (e.message === 'signed out') return needLogin();
@@ -79,7 +83,7 @@ $q('#q').addEventListener('input', e => {
   clearTimeout(timer);
   const term = e.target.value.trim();
   if (!gb.signedIn()) return needLogin();
-  if (term.length < 2) { seq++; return say(HINT); }
+  if (term.length < 2) { seq++; return say(hint()); }
   timer = setTimeout(() => run(term), 350);
 });
 box.addEventListener('click', e => {
@@ -89,5 +93,12 @@ box.addEventListener('click', e => {
   if (!b) return;
   const uri = b.closest('.item').dataset.uri;
   b.classList.contains('sv') ? gb.toggleSave(uri, b) : gb.pickPlaylist(uri);
+});
+box.addEventListener('click', e => {
+  const r = e.target.closest('.recent');
+  if (!r) return;
+  if (r.dataset.clear) { try { localStorage.removeItem(RK); } catch {} return say(hint()); }
+  $q('#q').value = r.dataset.t;
+  run(r.dataset.t);
 });
 })();

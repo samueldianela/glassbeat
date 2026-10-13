@@ -39,7 +39,11 @@
 <main class="main">
   <header class="top">
     <h1 id="greeting">Good evening</h1>
-    <button class="avatar glass" aria-label="Your profile"><svg class="ic"><use href="#i-user"/></svg></button>
+    <div class="acct">
+      <button class="login glass" id="login" hidden>Log in with Spotify</button>
+      <button class="avatar glass" id="avatar" aria-label="Your profile" aria-expanded="false" hidden><svg class="ic"><use href="#i-user"/></svg></button>
+      <div class="menu glass" id="menu" hidden><strong id="uname"></strong><button id="logout">Log out</button></div>
+    </div>
   </header>
 
   <div class="chips" role="group" aria-label="Filter">
@@ -90,6 +94,8 @@
   </div>
 </section>
 
+<div class="toast glass" id="toast" role="status" hidden></div>
 <script src="script.js"></script>
+<script src="spotify.js"></script>
 </body>
 </html>

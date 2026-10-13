@@ -100,3 +100,13 @@ h2{font-size:20px;font-weight:600;letter-spacing:-.01em;margin:30px 0 14px}
   .sheet{inset:16px 16px 16px 124px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Account */
+.acct{position:relative;display:flex;align-items:center}
+.login{padding:11px 18px;border-radius:99px;font-weight:600;font-size:14px}
+.avatar{background-size:cover;background-position:center}
+.avatar.has-img svg{display:none}
+.menu{position:absolute;right:0;top:54px;z-index:8;min-width:190px;padding:14px;border-radius:22px;display:flex;flex-direction:column;gap:10px}
+.menu strong{font-size:16px;overflow-wrap:anywhere}
+.menu button{padding:11px 14px;border-radius:14px;background:rgba(255,255,255,.12);font-weight:600;text-align:left}
+.toast{position:fixed;z-index:20;left:50%;transform:translateX(-50%);top:calc(14px + var(--safe-t));padding:12px 18px;border-radius:24px;font-size:14px;width:max-content;max-width:90vw}

@@ -46,6 +46,7 @@
     </div>
   </header>
 
+  <div id="view-home">
   <div class="chips" role="group" aria-label="Filter">
     <button class="chip" aria-pressed="true" data-f="all">All</button>
     <button class="chip" aria-pressed="false" data-f="music">Music</button>
@@ -66,6 +67,12 @@
     <h2 id="h-made">Made for you</h2>
     <div class="row" id="made"></div>
   </section>
+  </div>
+
+  <div id="view-search" hidden>
+    <label class="searchbox glass"><svg class="ic"><use href="#i-search"/></svg><input id="q" type="search" placeholder="Songs, artists, albums" autocomplete="off" enterkeyhint="search" aria-label="Search"></label>
+    <div id="sres"></div>
+  </div>
 </main>
 
 <!-- Mini player -->
@@ -97,5 +104,6 @@
 <div class="toast glass" id="toast" role="status" hidden></div>
 <script src="script.js"></script>
 <script src="spotify.js"></script>
+<script src="search.js"></script>
 </body>
 </html>

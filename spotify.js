@@ -60,7 +60,7 @@ async function api(path) {
   if (!r.ok) throw new Error(r.status);
   return r.json();
 }
-window.gb = { api };
+window.gb = { api, login, signedIn: () => !!store.get('access') };
 
 function logout(silent) {
   ['access', 'refresh', 'expires', 'verifier'].forEach(k => store.del(k));

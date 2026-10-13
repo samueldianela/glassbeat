@@ -110,3 +110,16 @@ h2{font-size:20px;font-weight:600;letter-spacing:-.01em;margin:30px 0 14px}
 .menu strong{font-size:16px;overflow-wrap:anywhere}
 .menu button{padding:11px 14px;border-radius:14px;background:rgba(255,255,255,.12);font-weight:600;text-align:left}
 .toast{position:fixed;z-index:20;left:50%;transform:translateX(-50%);top:calc(14px + var(--safe-t));padding:12px 18px;border-radius:24px;font-size:14px;width:max-content;max-width:90vw}
+
+/* Search */
+.searchbox{display:flex;align-items:center;gap:10px;height:54px;padding:0 18px;border-radius:27px;margin-top:4px}
+.searchbox input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--text);font:inherit;font-size:16px}
+.searchbox input::placeholder{color:var(--muted)}
+.searchbox:focus-within{border-color:rgba(255,255,255,.4)}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;align-items:center;gap:12px;padding:8px 16px 8px 8px;border-radius:22px;color:inherit;text-decoration:none}
+.item .dur{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+a.card{display:block;color:inherit;text-decoration:none}
+.card.round .art{border-radius:50%}
+.note{color:var(--muted);font-size:14px;margin:22px 4px}
+.empty{padding:26px;border-radius:26px;margin-top:22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}

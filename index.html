@@ -84,6 +84,8 @@
     </div>
     <div id="lres"></div>
   </div>
+
+  <div id="view-detail" hidden></div>
 </main>
 
 <!-- Mini player -->
@@ -97,8 +99,9 @@
 
 <!-- Full player -->
 <section class="sheet glass" id="sheet" aria-hidden="true" aria-label="Now playing">
-  <button class="ib close" aria-label="Close player"><svg class="ic"><use href="#i-down"/></svg></button>
+  <div class="stop"><button class="ib close" aria-label="Close player"><svg class="ic"><use href="#i-down"/></svg></button><button class="pill" id="lyr-btn" aria-pressed="false">Lyrics</button></div>
   <div class="art xl"></div>
+  <div class="lyrics" id="lyrics" aria-live="polite"></div>
   <div class="np">
     <div class="meta"><strong class="t-title">Track title</strong><span class="t-artist">Artist name</span></div>
     <button class="ib like" aria-label="Like" aria-pressed="false"><svg class="ic"><use href="#i-heart"/></svg></button>
@@ -118,5 +121,7 @@
 <script src="search.js"></script>
 <script src="library.js"></script>
 <script src="player.js"></script>
+<script src="browse.js"></script>
+<script src="lyrics.js"></script>
 </body>
 </html>

@@ -76,8 +76,9 @@ async function poll() {
   pt = setTimeout(poll, 3000);
 }
 
-async function play(uri, uris) {
-  const body = uris && uris.length > 1 ? { uris, offset: { uri } } : { uris: [uri] };
+async function play(uri, uris, ctx) {
+  const body = ctx ? { context_uri: ctx, ...(uri ? { offset: { uri } } : {}) }
+    : uris && uris.length > 1 ? { uris, offset: { uri } } : { uris: [uri] };
   released = false;
   try {
     const ok = await ensureSdk();

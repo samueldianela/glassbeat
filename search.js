@@ -50,13 +50,13 @@ function show(d) {
   const al = ((d.albums || {}).items || []).filter(Boolean);
   if (!t.length && !ar.length && !al.length) return say('<p class="note">No results. Try another spelling.</p>');
   const link = x => `href="${esc((x.external_urls || {}).spotify || '#')}" target="_blank" rel="noopener"`;
-  const cards = (arr, round, sub) => '<div class="row">' + arr.map(x =>
-    `<a class="card${round ? ' round' : ''}" ${link(x)}><div class="art" data-img="${esc(pic(x.images))}"></div><b>${esc(x.name)}</b><small>${esc(sub(x))}</small></a>`).join('') + '</div>';
+  const cards = (arr, round, sub, kind) => '<div class="row">' + arr.map(x =>
+    `<button class="card opn${round ? ' round' : ''}" data-kind="${kind}" data-id="${esc(x.id)}" data-name="${esc(x.name)}" data-sub="${esc(sub(x))}" data-cover="${esc(pic(x.images))}" data-url="${esc((x.external_urls || {}).spotify || '')}"><div class="art" data-img="${esc(pic(x.images))}"></div><b>${esc(x.name)}</b><small>${esc(sub(x))}</small></button>`).join('') + '</div>';
   let h = '';
   if (t.length) h += '<h2>Songs</h2><div class="list">' + t.map(x =>
     `<div class="item glass" data-uri="${esc(x.uri)}"><button class="open" aria-label="Play ${esc(x.name)}"><div class="art sm" data-img="${esc(pic((x.album || {}).images))}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc(names(x))}</span></div></button><a class="ib ext" ${link(x)} aria-label="Open in Spotify"><svg class="ic"><use href="#i-ext"/></svg></a><button class="ib sv" aria-label="Save to library" aria-pressed="false"><svg class="ic"><use href="#i-heart"/></svg></button><button class="ib ad" aria-label="Add to playlist"><svg class="ic"><use href="#i-plus"/></svg></button></div>`).join('') + '</div>';
-  if (ar.length) h += '<h2>Artists</h2>' + cards(ar, true, () => 'Artist');
-  if (al.length) h += '<h2>Albums</h2>' + cards(al, false, x => 'Album, ' + names(x));
+  if (ar.length) h += '<h2>Artists</h2>' + cards(ar, true, () => 'Artist', 'artist');
+  if (al.length) h += '<h2>Albums</h2>' + cards(al, false, x => 'Album, ' + names(x), 'album');
   say(h + '<p class="note">Tap a result to open it in Spotify.</p>');
   box.querySelectorAll('[data-img]').forEach(e => { if (e.dataset.img) e.style.setProperty('--img', `url("${e.dataset.img}")`); });
   gb.markSaved(box);

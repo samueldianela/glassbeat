@@ -22,7 +22,7 @@ const fail = e => e.message === 'signed out' ? needLogin() : say(note(
 
 const heart = (on) => `<button class="ib sv" aria-label="Save to library" aria-pressed="${on}"><svg class="ic"><use href="#i-heart"/></svg></button><button class="ib ad" aria-label="Add to playlist"><svg class="ic"><use href="#i-plus"/></svg></button>`;
 const trackRow = (x, saved) => `<div class="item glass" data-uri="${esc(x.uri)}"><button class="open" aria-label="Play ${esc(x.name)}"><div class="art sm" data-img="${esc(pic((x.album || {}).images))}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc(names(x))}</span></div></button><a class="ib ext" ${ext(x)} aria-label="Open in Spotify"><svg class="ic"><use href="#i-ext"/></svg></a>${heart(saved)}</div>`;
-const linkRow = (img, title, sub, x) => `<div class="item glass"><a class="open" ${ext(x)}><div class="art sm" data-img="${esc(img)}"></div><div class="meta"><strong>${esc(title)}</strong><span>${esc(sub)}</span></div></a></div>`;
+const linkRow = (kind, img, title, sub, x) => `<button class="item glass opn" data-kind="${kind}" data-id="${esc(x.id)}" data-name="${esc(title)}" data-sub="${esc(sub)}" data-cover="${esc(img)}" data-url="${esc((x.external_urls || {}).spotify || '')}"><div class="art sm" data-img="${esc(img)}"></div><div class="meta"><strong>${esc(title)}</strong><span>${esc(sub)}</span></div></button>`;
 const list = rows => '<div class="list">' + rows.join('') + '</div>';
 const ensureMe = async () => me || (me = await gb.api('/me'));
 const ownOnly = (items, m) => (items || []).filter(p => p && (p.collaborative || (p.owner || {}).id === m.id));
@@ -52,12 +52,12 @@ const loaders = {
   async albums() {
     const d = await gb.api('/me/albums?limit=50');
     const l = (d.items || []).map(i => i.album).filter(Boolean);
-    say(l.length ? list(l.map(x => linkRow(pic(x.images), x.name, names(x), x))) : note('No saved albums yet.'));
+    say(l.length ? list(l.map(x => linkRow('album', pic(x.images), x.name, names(x), x))) : note('No saved albums yet.'));
   },
   async artists() {
     const d = await gb.api('/me/following?type=artist&limit=50');
     const l = ((d.artists || {}).items || []).filter(Boolean);
-    say(l.length ? list(l.map(x => linkRow(pic(x.images), x.name, 'Artist', x))) : note('You are not following any artists yet.'));
+    say(l.length ? list(l.map(x => linkRow('artist', pic(x.images), x.name, 'Artist', x))) : note('You are not following any artists yet.'));
   }
 };
 
@@ -71,7 +71,7 @@ async function show(t) {
 
 async function detail(id, name) {
   say(note('Loading…'));
-  const back = '<button class="login glass newpl" id="bk">Back</button><h2>' + esc(name) + '</h2>';
+  const back = '<div class="dact"><button class="login glass" id="bk">Back</button><button class="login glass" id="pp">Play</button></div><h2>' + esc(name) + '</h2>';
   try {
     const d = await gb.api(`/playlists/${encodeURIComponent(id)}/items?limit=50`);
     const l = (d.items || []).map(i => i.item || i.track).filter(x => x && String(x.uri).startsWith('spotify:track'));
@@ -82,6 +82,7 @@ async function detail(id, name) {
     say(back + note('Spotify only shows the songs of playlists you own or share.'));
   }
   const bk = $('#bk'); if (bk) bk.onclick = () => show('playlists');
+  const pp = $('#pp'); if (pp) pp.onclick = () => gb.play(null, null, 'spotify:playlist:' + id);
 }
 
 async function newPlaylist() {

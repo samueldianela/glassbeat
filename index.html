@@ -73,6 +73,16 @@
     <label class="searchbox glass"><svg class="ic"><use href="#i-search"/></svg><input id="q" type="search" placeholder="Songs, artists, albums" autocomplete="off" enterkeyhint="search" aria-label="Search"></label>
     <div id="sres"></div>
   </div>
+
+  <div id="view-library" hidden>
+    <div class="chips" id="ltabs" role="group" aria-label="Library">
+      <button class="tab" aria-pressed="true" data-t="playlists">Playlists</button>
+      <button class="tab" aria-pressed="false" data-t="tracks">Songs</button>
+      <button class="tab" aria-pressed="false" data-t="albums">Albums</button>
+      <button class="tab" aria-pressed="false" data-t="artists">Artists</button>
+    </div>
+    <div id="lres"></div>
+  </div>
 </main>
 
 <!-- Mini player -->
@@ -105,5 +115,6 @@
 <script src="script.js"></script>
 <script src="spotify.js"></script>
 <script src="search.js"></script>
+<script src="library.js"></script>
 </body>
 </html>

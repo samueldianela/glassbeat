@@ -1,5 +1,5 @@
 // Spotify login (PKCE) and profile. Runs fully in the browser: no server, no secret.
-const SCOPES = 'user-read-private user-read-email';
+const SCOPES = 'user-read-private user-library-read user-library-modify user-follow-read playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public';
 const CLIENT_ID = ''; // Optional: paste your Client ID here. If empty, the page asks once and remembers it.
 const REDIRECT = location.origin + location.pathname.replace(/index\.html$/, '');
 
@@ -23,6 +23,7 @@ async function login() {
   if (!id) { id = (prompt('Paste your Spotify Client ID') || '').trim(); if (!id) return; store.set('cid', id); }
   const verifier = b64(crypto.getRandomValues(new Uint8Array(48)));
   store.set('verifier', verifier);
+  store.set('scopes', SCOPES);
   const challenge = b64(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
   location.href = 'https://accounts.spotify.com/authorize?' + new URLSearchParams({
     response_type: 'code', client_id: id, scope: SCOPES, redirect_uri: REDIRECT,
@@ -52,13 +53,18 @@ async function access() {
   return store.get('access');
 }
 
-// Used by every later step: await gb.api('/me')
-async function api(path) {
+// Used by every later step: await gb.api('/me'), or gb.api(path, 'POST', {json})
+async function api(path, method = 'GET', body) {
   const t = await access();
   if (!t) throw new Error('signed out');
-  const r = await fetch('https://api.spotify.com/v1' + path, { headers: { Authorization: 'Bearer ' + t } });
+  const r = await fetch('https://api.spotify.com/v1' + path, {
+    method,
+    headers: { Authorization: 'Bearer ' + t, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    body: body ? JSON.stringify(body) : undefined
+  });
   if (!r.ok) throw new Error(r.status);
-  return r.json();
+  const txt = await r.text();
+  return txt ? JSON.parse(txt) : null;
 }
 window.gb = { api, login, signedIn: () => !!store.get('access') };
 
@@ -100,6 +106,10 @@ async function init() {
   }
   if (q.has('code') || q.has('error')) history.replaceState({}, '', REDIRECT);
 
+  if (store.get('access') && store.get('scopes') !== SCOPES) {
+    logout(true);
+    toast('New features need new permissions. Please log in again.');
+  }
   if (!(await access())) return show(null);
   try { show(await api('/me')); }
   catch (e) {

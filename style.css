@@ -123,3 +123,18 @@ a.card{display:block;color:inherit;text-decoration:none}
 .card.round .art{border-radius:50%}
 .note{color:var(--muted);font-size:14px;margin:22px 4px}
 .empty{padding:26px;border-radius:26px;margin-top:22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}
+
+/* Library */
+.tab{flex:none;padding:9px 20px;border-radius:99px;font-weight:600;font-size:15px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.28);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);transition:background .25s,color .25s}
+.tab[aria-pressed=true]{background:var(--text);color:var(--ink);border-color:transparent}
+#lres{margin-top:18px}
+.newpl{margin-bottom:16px}
+button.item{width:100%;text-align:left;font:inherit}
+.item .open{display:flex;align-items:center;gap:12px;flex:1;min-width:0;color:inherit;text-decoration:none}
+.item .ib{width:40px;height:40px}
+.sv[aria-pressed=true] .ic{fill:#ff8fa3;stroke:#ff8fa3}
+.pick{position:fixed;inset:0;z-index:30;background:rgba(5,7,14,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;padding:14px}
+.sheetp{width:min(100%,460px);max-height:70vh;overflow:auto;border-radius:30px;padding:18px;display:flex;flex-direction:column;gap:8px;background:linear-gradient(160deg,rgba(60,55,120,.6),rgba(10,13,26,.85))}
+.sheetp h2{margin:4px 6px 8px}
+.opt{padding:14px 16px;border-radius:18px;text-align:left;font-weight:600;background:rgba(255,255,255,.1)}
+.opt.cancel{background:none;color:var(--muted)}

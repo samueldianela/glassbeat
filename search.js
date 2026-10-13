@@ -1,4 +1,5 @@
 // Step 2: Search. Needs spotify.js to load first (it provides window.gb).
+(() => {
 const $q = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
 const mmss = ms => { const s = Math.round(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -78,3 +79,4 @@ $q('#q').addEventListener('input', e => {
   if (term.length < 2) { seq++; return say(HINT); }
   timer = setTimeout(() => run(term), 350);
 });
+})();

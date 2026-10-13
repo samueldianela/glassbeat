@@ -54,7 +54,7 @@ function show(d) {
     `<a class="card${round ? ' round' : ''}" ${link(x)}><div class="art" data-img="${esc(pic(x.images))}"></div><b>${esc(x.name)}</b><small>${esc(sub(x))}</small></a>`).join('') + '</div>';
   let h = '';
   if (t.length) h += '<h2>Songs</h2><div class="list">' + t.map(x =>
-    `<div class="item glass" data-uri="${esc(x.uri)}"><a class="open" ${link(x)}><div class="art sm" data-img="${esc(pic((x.album || {}).images))}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc(names(x))}</span></div></a><button class="ib sv" aria-label="Save to library" aria-pressed="false"><svg class="ic"><use href="#i-heart"/></svg></button><button class="ib ad" aria-label="Add to playlist"><svg class="ic"><use href="#i-plus"/></svg></button></div>`).join('') + '</div>';
+    `<div class="item glass" data-uri="${esc(x.uri)}"><button class="open" aria-label="Play ${esc(x.name)}"><div class="art sm" data-img="${esc(pic((x.album || {}).images))}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc(names(x))}</span></div></button><a class="ib ext" ${link(x)} aria-label="Open in Spotify"><svg class="ic"><use href="#i-ext"/></svg></a><button class="ib sv" aria-label="Save to library" aria-pressed="false"><svg class="ic"><use href="#i-heart"/></svg></button><button class="ib ad" aria-label="Add to playlist"><svg class="ic"><use href="#i-plus"/></svg></button></div>`).join('') + '</div>';
   if (ar.length) h += '<h2>Artists</h2>' + cards(ar, true, () => 'Artist');
   if (al.length) h += '<h2>Albums</h2>' + cards(al, false, x => 'Album, ' + names(x));
   say(h + '<p class="note">Tap a result to open it in Spotify.</p>');
@@ -83,6 +83,8 @@ $q('#q').addEventListener('input', e => {
   timer = setTimeout(() => run(term), 350);
 });
 box.addEventListener('click', e => {
+  const o = e.target.closest('button.open');
+  if (o) return gb.play(o.closest('.item').dataset.uri, [...o.closest('.list').querySelectorAll('.item[data-uri]')].map(i => i.dataset.uri));
   const b = e.target.closest('.sv, .ad');
   if (!b) return;
   const uri = b.closest('.item').dataset.uri;

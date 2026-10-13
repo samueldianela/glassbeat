@@ -21,7 +21,7 @@ const fail = e => e.message === 'signed out' ? needLogin() : say(note(
   : 'Something went wrong. Try again.'));
 
 const heart = (on) => `<button class="ib sv" aria-label="Save to library" aria-pressed="${on}"><svg class="ic"><use href="#i-heart"/></svg></button><button class="ib ad" aria-label="Add to playlist"><svg class="ic"><use href="#i-plus"/></svg></button>`;
-const trackRow = (x, saved) => `<div class="item glass" data-uri="${esc(x.uri)}"><a class="open" ${ext(x)}><div class="art sm" data-img="${esc(pic((x.album || {}).images))}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc(names(x))}</span></div></a>${heart(saved)}</div>`;
+const trackRow = (x, saved) => `<div class="item glass" data-uri="${esc(x.uri)}"><button class="open" aria-label="Play ${esc(x.name)}"><div class="art sm" data-img="${esc(pic((x.album || {}).images))}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc(names(x))}</span></div></button><a class="ib ext" ${ext(x)} aria-label="Open in Spotify"><svg class="ic"><use href="#i-ext"/></svg></a>${heart(saved)}</div>`;
 const linkRow = (img, title, sub, x) => `<div class="item glass"><a class="open" ${ext(x)}><div class="art sm" data-img="${esc(img)}"></div><div class="meta"><strong>${esc(title)}</strong><span>${esc(sub)}</span></div></a></div>`;
 const list = rows => '<div class="list">' + rows.join('') + '</div>';
 const ensureMe = async () => me || (me = await gb.api('/me'));
@@ -133,6 +133,8 @@ async function pickPlaylist(uri) {
 
 document.querySelectorAll('#ltabs .tab').forEach(b => b.onclick = () => show(b.dataset.t));
 out.addEventListener('click', e => {
+  const o = e.target.closest('button.open');
+  if (o) return gb.play(o.closest('.item').dataset.uri, [...o.closest('.list').querySelectorAll('.item[data-uri]')].map(i => i.dataset.uri));
   const act = e.target.closest('.sv, .ad');
   if (act) { const uri = act.closest('.item').dataset.uri; return act.classList.contains('sv') ? toggleSave(uri, act) : pickPlaylist(uri); }
   const p = e.target.closest('.pl');

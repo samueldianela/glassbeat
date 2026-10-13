@@ -138,3 +138,7 @@ button.item{width:100%;text-align:left;font:inherit}
 .sheetp h2{margin:4px 6px 8px}
 .opt{padding:14px 16px;border-radius:18px;text-align:left;font-weight:600;background:rgba(255,255,255,.1)}
 .opt.cancel{background:none;color:var(--muted)}
+
+/* Playback */
+button.open{background:none;border:0;font:inherit;text-align:left;color:inherit;cursor:pointer}
+.item .ext{color:var(--muted)}

@@ -1,5 +1,5 @@
 // Spotify login (PKCE) and profile. Runs fully in the browser: no server, no secret.
-const SCOPES = 'user-read-private user-library-read user-library-modify user-follow-read playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public';
+const SCOPES = 'user-read-private user-library-read user-library-modify user-follow-read playlist-read-private playlist-read-collaborative playlist-modify-private playlist-modify-public streaming user-read-email user-modify-playback-state user-read-playback-state';
 const CLIENT_ID = ''; // Optional: paste your Client ID here. If empty, the page asks once and remembers it.
 const REDIRECT = location.origin + location.pathname.replace(/index\.html$/, '');
 
@@ -66,7 +66,7 @@ async function api(path, method = 'GET', body) {
   const txt = await r.text();
   return txt ? JSON.parse(txt) : null;
 }
-window.gb = { api, login, signedIn: () => !!store.get('access') };
+window.gb = { api, login, token: access, signedIn: () => !!store.get('access') };
 
 function logout(silent) {
   ['access', 'refresh', 'expires', 'verifier'].forEach(k => store.del(k));

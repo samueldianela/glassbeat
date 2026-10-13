@@ -50,6 +50,7 @@ const audio = new Audio();
 const sheet = $('#sheet'), mini = $('#mini'), seek = $('#seek');
 let idx = 0, pos = 0, len = 200, playing = false, timer;
 const real = () => !!queue[idx].src;
+const sp = () => (window.gb && gb.sp && gb.sp.active) ? gb.sp : null;
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 function draw() {
@@ -65,6 +66,7 @@ function draw() {
 function load(i) {
   idx = (i + queue.length) % queue.length; pos = 0; len = 200;
   const t = queue[idx];
+  $$('.mini .art, .sheet .art').forEach(e => e.style.removeProperty('--img'));
   audio.pause(); clearInterval(timer);
   if (t.src) audio.src = t.src; else audio.removeAttribute('src');
   $$('.t-title').forEach(e => e.textContent = t.title);
@@ -72,6 +74,7 @@ function load(i) {
   draw();
 }
 function toggle(force) {
+  const s = sp(); if (s) return s.toggle();
   playing = force ?? !playing;
   clearInterval(timer);
   if (real()) {
@@ -87,12 +90,13 @@ audio.addEventListener('timeupdate', () => { pos = audio.currentTime; draw(); })
 audio.addEventListener('ended', () => { load(idx + 1); toggle(true); });
 
 $$('.play').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); toggle(); }));
-$('#next').onclick = () => { const was = playing; load(idx + 1); toggle(was); };
+$('#next').onclick = () => { const s = sp(); if (s) return s.next(); const was = playing; load(idx + 1); toggle(was); };
 $('#prev').onclick = () => {
+  const s = sp(); if (s) return s.prev();
   if (pos > 3) { pos = 0; if (real()) audio.currentTime = 0; draw(); }
   else { const was = playing; load(idx - 1); toggle(was); }
 };
-seek.oninput = () => { pos = +seek.value; if (real()) audio.currentTime = pos; draw(); };
+seek.oninput = () => { const s = sp(); if (s) return s.seek(+seek.value); pos = +seek.value; if (real()) audio.currentTime = pos; draw(); };
 $$('.like').forEach(b => b.addEventListener('click', e => {
   e.stopPropagation();
   const on = b.getAttribute('aria-pressed') !== 'true';
@@ -102,7 +106,8 @@ $$('.like').forEach(b => b.addEventListener('click', e => {
 // Tap a tile or card to play it
 document.addEventListener('click', e => {
   const t = e.target.closest('.tile, .card');
-  if (!t) return;
+  if (!t || t.dataset.i === undefined) return;
+  if (window.gb && gb.sp) gb.sp.release();
   const list = t.dataset.k === 'b' ? made : items;
   const item = list[+t.dataset.i];
   load(queue.indexOf(item)); toggle(true);
@@ -114,5 +119,18 @@ mini.addEventListener('click', () => open(true));
 mini.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target === mini) open(true); });
 $('.close').onclick = () => open(false);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') open(false); });
+
+// Hook for player.js: shows Spotify playback in the glass player
+window.glassUI = {
+  set(o) {
+    audio.pause(); clearInterval(timer);
+    if (o.title != null) {
+      $$('.t-title').forEach(e => e.textContent = o.title);
+      $$('.t-artist').forEach(e => e.textContent = o.artist || '');
+      $$('.mini .art, .sheet .art').forEach(e => o.img ? e.style.setProperty('--img', `url("${o.img}")`) : e.style.removeProperty('--img'));
+    }
+    playing = !!o.playing; pos = o.pos || 0; len = o.len || 1; draw();
+  }
+};
 
 load(0);

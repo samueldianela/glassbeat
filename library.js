@@ -18,7 +18,7 @@ const needLogin = () => {
 const fail = e => e.message === 'signed out' ? needLogin() : say(note(
   e.message === '429' ? 'Too many requests. Wait a moment and try again.'
   : e.message === '403' ? 'Spotify did not allow that. Log out and log in again to grant the new permissions.'
-  : 'Something went wrong. Try again.'));
+  : 'Something went wrong (error ' + e.message + '). Try again.'));
 
 const heart = (on) => `<button class="ib sv" aria-label="Save to library" aria-pressed="${on}"><svg class="ic"><use href="#i-heart"/></svg></button><button class="ib ad" aria-label="Add to playlist"><svg class="ic"><use href="#i-plus"/></svg></button>`;
 const trackRow = (x, saved) => `<div class="item glass" data-uri="${esc(x.uri)}"><button class="open" aria-label="Play ${esc(x.name)}"><div class="art sm" data-img="${esc(pic((x.album || {}).images))}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc(names(x))}</span></div></button><a class="ib ext" ${ext(x)} aria-label="Open in Spotify"><svg class="ic"><use href="#i-ext"/></svg></a>${heart(saved)}</div>`;

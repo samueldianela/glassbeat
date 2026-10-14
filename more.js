@@ -58,6 +58,25 @@ function onMenu(e) {
   document.body.appendChild(b); b.click(); b.remove();
 }
 
+// Spotify has no "clear queue" command, so skip past every queued song, then restart the current one on its own
+async function clearQueue() {
+  const i = gb.sp.info();
+  if (!i.uri) return toast('Play a song first.');
+  panel('<h2>Clearing the queue</h2><p class="note">One moment…</p>', () => {});
+  try {
+    const q = await gb.api('/me/player/queue');
+    const n = ((q && q.queue) || []).length;
+    if (!n) { close(); return toast('The queue is already empty.'); }
+    await gb.api('/me/player/pause', 'PUT');
+    for (let k = 0; k < Math.min(n, 50); k++) await gb.api('/me/player/next', 'POST');
+    await gb.play(i.uri, null, null, i.pos * 1000);
+    if (!i.playing) await gb.api('/me/player/pause', 'PUT');
+    close(); toast('Queue cleared. New songs you add start a fresh queue.');
+  } catch (e) {
+    close(); toast('Could not clear the queue (error ' + e.message + ').');
+  }
+}
+
 async function queue() {
   panel('<h2>Up next</h2><p class="note">Loading…</p>', () => {});
   const back = '<button class="opt" data-a="menu">Back</button>';
@@ -68,10 +87,11 @@ async function queue() {
     const uris = q.map(t => t.uri);
     panel('<h2>Up next</h2>' + (now ? `<p class="note">Now playing: ${esc(now.name)}</p>` : '') + (q.length
       ? q.map((t, k) => `<button class="opt" data-q="${k}">${esc(t.name)}<small>${esc((t.artists || []).map(a => a.name).join(', '))}</small></button>`).join('')
-      : '<p class="note">Nothing is queued. Use the + on a song to add one.</p>') + back, e => {
+      : '<p class="note">Nothing is queued. Use the + on a song to add one.</p>') + (q.length ? '<button class="opt" data-a="clear">Clear queue</button>' : '') + back, e => {
       const o = e.target.closest('[data-q],[data-a]');
       if (!o) return;
       if (o.dataset.a === 'menu') return menu();
+      if (o.dataset.a === 'clear') return clearQueue();
       const k = +o.dataset.q;
       close(); gb.play(uris[k], uris.slice(k));
     });

@@ -28,7 +28,11 @@ async function load() {
   const P = ((pls || {}).items || []).filter(Boolean);
   if (P.length) { fill('#quick', P.map(p => tile(p, myId)).join(''), '#h-pick', 'Your playlists'); real = true; }
   const seen = new Set();
-  const R = ((rec || {}).items || []).map(i => i.track).filter(t => t && !seen.has(t.uri) && seen.add(t.uri)).slice(0, 10);
+  let R = ((rec || {}).items || []).map(i => i.track).filter(t => t && !seen.has(t.uri) && seen.add(t.uri)).slice(0, 10);
+  if (!R.length) {
+    let h = []; try { h = JSON.parse(localStorage.getItem('gb_history')) || []; } catch {}
+    R = h.slice(0, 10).map(x => ({ uri: x.uri, name: x.title, artists: [{ name: x.artist }], album: { images: [{ url: x.img }] } }));
+  }
   if (R.length) { fill('#jump', R.map(trackCard).join(''), '#h-jump', 'Recently played'); real = true; }
   const T = ((tops || {}).items || []).filter(Boolean);
   if (T.length) { fill('#top', T.map(trackCard).join('')); $('#sec-top').hidden = false; real = true; }

@@ -62,7 +62,11 @@ async function api(path, method = 'GET', body) {
     headers: { Authorization: 'Bearer ' + t, ...(body ? { 'Content-Type': 'application/json' } : {}) },
     body: body ? JSON.stringify(body) : undefined
   });
-  if (!r.ok) throw new Error(r.status);
+  if (!r.ok) {
+    const e = new Error(r.status);
+    try { e.detail = ((await r.json()).error || {}).message; } catch {}
+    throw e;
+  }
   const txt = await r.text();
   return txt ? JSON.parse(txt) : null;
 }

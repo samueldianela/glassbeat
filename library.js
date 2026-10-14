@@ -44,6 +44,17 @@ const loaders = {
       `<button class="item glass opn" data-kind="playlist" data-id="${esc(p.id)}" data-name="${esc(p.name)}" data-sub="${(p.items || p.tracks || {}).total ?? 0} songs" data-cover="${esc(pic(p.images))}" data-url="${esc((p.external_urls || {}).spotify || '')}" data-own="${(p.owner || {}).id === m.id ? 1 : 0}"><div class="art sm" data-img="${esc(pic(p.images))}"></div><div class="meta"><strong>${esc(p.name)}</strong><span>${(p.items || p.tracks || {}).total ?? 0} songs</span></div></button>`)) : note('No playlists yet.')));
     $('#np').onclick = newPlaylist;
   },
+  history() {
+    let h = [];
+    try { h = JSON.parse(localStorage.getItem('gb_history')) || []; } catch {}
+    if (!h.length) return say(note('Songs you play here show up in this list, even after a refresh.'));
+    say('<button class="login glass newpl" id="hc">Clear history</button>' + list(h.map(x => trackRow({
+      uri: x.uri, name: x.title, artists: [{ name: x.artist }], album: { images: [{ url: x.img }] },
+      external_urls: { spotify: 'https://open.spotify.com/track/' + String(x.uri).split(':')[2] }
+    }, false))));
+    $('#hc').onclick = () => { try { localStorage.removeItem('gb_history'); } catch {} show('history'); };
+    markSaved(out);
+  },
   async tracks() {
     const d = await gb.api('/me/tracks?limit=50');
     const l = (d.items || []).map(i => i.track).filter(Boolean);

@@ -63,9 +63,11 @@ function stopped() {
   media({ playing: false });
   save(true);
 }
+let lock = 0;   // right after you press shuffle or repeat, ignore older state that Spotify may still be reporting
 function syncExtras(shuffle, repeat) {
-  if (shuffle != null && shuffleMode !== 'local') shuffleOn = !!shuffle;
-  if (repeat != null) repeatM = repeat;
+  const fresh = Date.now() >= lock;
+  if (shuffle != null && shuffleMode !== 'local' && fresh) shuffleOn = !!shuffle;
+  if (repeat != null && fresh) repeatM = repeat;
   shuf.setAttribute('aria-pressed', shuffleOn);
   rep.dataset.m = repeatM;
   rep.setAttribute('aria-pressed', repeatM !== 'off');
@@ -267,6 +269,7 @@ async function setShuffle(on) {
 shuf.onclick = async () => {
   if (!need()) return;
   const on = !shuffleOn;
+  lock = Date.now() + 2500;
   shuffleOn = on; syncExtras();
   try { await setShuffle(on); } catch (e) { shuffleOn = !on; syncExtras(); fail(e); }
   save(true);
@@ -275,6 +278,7 @@ rep.onclick = async () => {
   if (!need()) return;
   const order = (origList.length > 1 || ctx) ? ['off', 'context', 'track'] : ['off', 'track'];
   const next = order[(order.indexOf(repeatM) + 1) % order.length];
+  lock = Date.now() + 2500;
   const apply = async s => { await gb.api('/me/player/repeat?state=' + s + dev(), 'PUT'); repeatM = s; syncExtras(); };
   try { await apply(next); }
   catch (e) {

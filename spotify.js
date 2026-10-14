@@ -68,7 +68,8 @@ async function api(path, method = 'GET', body) {
     throw e;
   }
   const txt = await r.text();
-  return txt ? JSON.parse(txt) : null;
+  if (!txt) return null;
+  try { return JSON.parse(txt); } catch { return null; }   // some Spotify player commands answer with plain text
 }
 window.gb = { api, login, token: access, signedIn: () => !!store.get('access') };
 

@@ -25,13 +25,33 @@ const spotifyLink = url => url ? `<a class="login glass" href="${esc(url)}" targ
 
 function head(a, kind, ctx) {
   view.dataset.ctx = ctx;
+  const canSave = kind !== 'Playlist' || a.own !== '1';
   view.innerHTML = `<div class="dact"><button class="login glass" id="dback">Back</button></div>
     <div class="dtop"><div class="art" data-img="${esc(a.img)}"></div><div><h2 class="dname">${esc(a.name)}</h2><p class="dsub">${esc(a.sub || kind)}</p></div></div>
-    <div class="dact"><button class="login glass" id="dplay">Play</button>${spotifyLink(a.url)}</div><div id="dbody">${note('Loading…')}</div>`;
+    <div class="dact"><button class="login glass" id="dplay">Play</button><button class="login glass" id="dshuf" hidden>Shuffle</button>${canSave ? '<button class="login glass" id="dsave" hidden>Save</button>' : ''}<button class="login glass" id="dshare">Share</button>${spotifyLink(a.url)}</div><div id="dbody">${note('Loading…')}</div>`;
   $('#dback').onclick = back;
   $('#dplay').onclick = () => gb.play(null, null, ctx);
+  $('#dshare').onclick = () => gb.share(a.name, a.url || 'https://open.spotify.com/' + kind.toLowerCase() + '/' + a.id);
+  if (canSave) saveInit(ctx, kind);
   paint();
 }
+async function saveInit(uri, kind) {
+  const b = $('#dsave');
+  if (!b) return;
+  const word = kind === 'Artist' ? ['Follow', 'Following'] : ['Save', 'Saved'];
+  const set = on => { b.dataset.on = on ? '1' : '0'; b.textContent = word[on ? 1 : 0]; };
+  try { const v = await gb.api('/me/library/contains?uris=' + encodeURIComponent(uri)); set(!!(v && v[0])); b.hidden = false; }
+  catch { return; }
+  b.onclick = async () => {
+    const on = b.dataset.on === '1';
+    try {
+      await gb.api('/me/library?uris=' + encodeURIComponent(uri), on ? 'DELETE' : 'PUT');
+      set(!on);
+      toast(on ? 'Removed from your library' : kind === 'Artist' ? 'Following' : 'Saved to your library');
+    } catch (e) { toast('Could not update it (error ' + e.message + ').'); }
+  };
+}
+const shufWire = uris => { const b = $('#dshuf'); if (b && uris.length > 1) { b.hidden = false; b.onclick = () => gb.playShuffled(uris); } };
 const body = h => { const b = $('#dbody'); if (!b) return; b.innerHTML = h; paint(); gb.markSaved(view); };
 const fail = e => body(note(e.message === '429' ? 'Too many requests. Wait a moment and try again.' : e.message === 'signed out' ? 'Please log in again.' : 'Could not load this page (error ' + e.message + '). Try again.'));
 
@@ -45,6 +65,7 @@ async function album(a) {
     const d = await gb.api(`/albums/${encodeURIComponent(a.id)}/tracks?limit=50`);
     const t = (d.items || []).filter(Boolean);
     body(t.length ? '<div class="list">' + t.map(x => row(x, a.img)).join('') + '</div>' : note('No songs found.'));
+    shufWire(t.map(x => x.uri));
   } catch (e) { fail(e); }
 }
 async function artist(a) {
@@ -72,6 +93,7 @@ async function artist(a) {
   body((T.length ? '<h2>Songs</h2><div class="list">' + T.map(x => row(x, pic((x.album || {}).images))).join('') + '</div>' : '')
     + (A.length ? '<h2>Albums</h2><div class="list">' + A.map(albumRow).join('') + '</div>' : '')
     || note('Nothing found for this artist.'));
+  shufWire(T.map(x => x.uri));
 }
 
 async function playlist(a) {
@@ -80,7 +102,7 @@ async function playlist(a) {
   const own = a.own === '1';
   $('#dplay').parentElement.insertAdjacentHTML('beforeend', own
     ? '<button class="login glass" id="dren">Rename</button><button class="login glass" id="ddel">Delete</button>'
-    : '<button class="login glass" id="ddel">Remove</button>');
+    : '');
   const ren = $('#dren');
   if (ren) ren.onclick = async () => {
     const n = (prompt('Rename playlist', a.name) || '').trim();
@@ -88,7 +110,8 @@ async function playlist(a) {
     try { await gb.api('/playlists/' + encodeURIComponent(a.id), 'PUT', { name: n }); a.name = n; $('.dname').textContent = n; toast('Renamed'); }
     catch (e) { toast('Could not rename it (error ' + e.message + ').'); }
   };
-  $('#ddel').onclick = async () => {
+  const del = $('#ddel');
+  if (del) del.onclick = async () => {
     if (!confirm(own ? 'Delete this playlist?' : 'Remove this playlist from your library?')) return;
     try {
       await gb.api('/me/library?uris=' + encodeURIComponent('spotify:playlist:' + a.id), 'DELETE');
@@ -101,6 +124,7 @@ async function playlist(a) {
     const d = await gb.api(`/playlists/${encodeURIComponent(a.id)}/items?limit=50`);
     const l = (d.items || []).map(i => i.item || i.track).filter(x => x && String(x.uri).startsWith('spotify:track'));
     body(l.length ? '<div class="list">' + l.map(x => row(x, pic((x.album || {}).images), own)).join('') + '</div>' : note('No songs here yet.'));
+    shufWire(l.map(x => x.uri));
   } catch (e) {
     body(note(e.message === '403' ? 'Spotify only shows the songs of playlists you own or share. You can still press Play.' : 'Could not load this playlist (error ' + e.message + ').'));
   }
@@ -127,6 +151,8 @@ view.addEventListener('click', e => {
 document.addEventListener('click', e => {
   const o = e.target.closest('.opn');
   if (!o) return;
+  const sh = $('#sheet');
+  if (sh.classList.contains('open')) { sh.classList.remove('open'); sh.setAttribute('aria-hidden', 'true'); }
   const d = o.dataset, a = { id: d.id, name: d.name, sub: d.sub, img: d.cover, url: d.url, own: d.own };
   go(() => d.kind === 'artist' ? artist(a) : d.kind === 'playlist' ? playlist(a) : album(a));
 });
@@ -134,4 +160,11 @@ document.querySelectorAll('.nav button').forEach((b, i) => b.addEventListener('c
   if (i > 2 && prev) prev.hidden = false;
   view.hidden = true; prev = null; hist = []; current = null;
 }));
+gb.share = async (title, url) => {
+  try {
+    if (navigator.share) return await navigator.share({ title, text: title, url });
+    await navigator.clipboard.writeText(url);
+    toast('Link copied');
+  } catch (e) { if (!e || e.name !== 'AbortError') toast('Could not share this.'); }
+};
 })();

@@ -12,7 +12,7 @@ const hint = () => { const r = recents(); return HINT + (r.length ? '<div class=
 const HINT = '<p class="note">Search for songs, artists and albums.</p>';
 const box = $q('#sres');
 const navBtns = [...document.querySelectorAll('.nav button')];
-let current = 0, seq = 0, timer;
+let current = 0, seq = 0, timer, filt = 'all';
 
 const say = html => { box.innerHTML = html; };
 function needLogin() {
@@ -52,17 +52,20 @@ function show(d) {
   const t = ((d.tracks || {}).items || []).filter(Boolean);
   const ar = ((d.artists || {}).items || []).filter(Boolean);
   const al = ((d.albums || {}).items || []).filter(Boolean);
-  if (!t.length && !ar.length && !al.length) return say('<p class="note">No results. Try another spelling.</p>');
+  const pl = ((d.playlists || {}).items || []).filter(Boolean);
+  if (!t.length && !ar.length && !al.length && !pl.length) return say('<p class="note">No results. Try another spelling.</p>');
   const link = x => `href="${esc((x.external_urls || {}).spotify || '#')}" target="_blank" rel="noopener"`;
   const cards = (arr, round, sub, kind) => '<div class="row">' + arr.map(x =>
     `<button class="card opn${round ? ' round' : ''}" data-kind="${kind}" data-id="${esc(x.id)}" data-name="${esc(x.name)}" data-sub="${esc(sub(x))}" data-cover="${esc(pic(x.images))}" data-url="${esc((x.external_urls || {}).spotify || '')}"><div class="art" data-img="${esc(pic(x.images))}"></div><b>${esc(x.name)}</b><small>${esc(sub(x))}</small></button>`).join('') + '</div>';
-  let h = '';
-  if (t.length) h += '<h2>Songs</h2><div class="list">' + t.map(x =>
-    `<div class="item glass" data-uri="${esc(x.uri)}"><button class="open" aria-label="Play ${esc(x.name)}"><div class="art sm" data-img="${esc(pic((x.album || {}).images))}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc(names(x))}</span></div></button><a class="ib ext" ${link(x)} aria-label="Open in Spotify"><svg class="ic"><use href="#i-ext"/></svg></a><button class="ib sv" aria-label="Save to library" aria-pressed="false"><svg class="ic"><use href="#i-heart"/></svg></button><button class="ib ad" aria-label="Add to playlist"><svg class="ic"><use href="#i-plus"/></svg></button></div>`).join('') + '</div>';
-  if (ar.length) h += '<h2>Artists</h2>' + cards(ar, true, () => 'Artist', 'artist');
-  if (al.length) h += '<h2>Albums</h2>' + cards(al, false, x => 'Album, ' + names(x), 'album');
+  let h = '<div class="chips fil" role="group" aria-label="Filter results">' + [['all', 'All'], ['songs', 'Songs'], ['artists', 'Artists'], ['albums', 'Albums'], ['playlists', 'Playlists']].map(([k, l]) => `<button class="tab" data-f="${k}" aria-pressed="${k === filt}">${l}</button>`).join('') + '</div>';
+  if (t.length) h += '<div data-sec="songs"><h2>Songs</h2><div class="list">' + t.map(x =>
+    `<div class="item glass" data-uri="${esc(x.uri)}"><button class="open" aria-label="Play ${esc(x.name)}"><div class="art sm" data-img="${esc(pic((x.album || {}).images))}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc(names(x))}</span></div></button><a class="ib ext" ${link(x)} aria-label="Open in Spotify"><svg class="ic"><use href="#i-ext"/></svg></a><button class="ib sv" aria-label="Save to library" aria-pressed="false"><svg class="ic"><use href="#i-heart"/></svg></button><button class="ib ad" aria-label="Add to playlist"><svg class="ic"><use href="#i-plus"/></svg></button></div>`).join('') + '</div></div>';
+  if (ar.length) h += '<div data-sec="artists"><h2>Artists</h2>' + cards(ar, true, () => 'Artist', 'artist') + '</div>';
+  if (al.length) h += '<div data-sec="albums"><h2>Albums</h2>' + cards(al, false, x => 'Album, ' + names(x), 'album') + '</div>';
+  if (pl.length) h += '<div data-sec="playlists"><h2>Playlists</h2>' + cards(pl, false, x => 'Playlist, ' + ((x.owner || {}).display_name || 'Spotify'), 'playlist') + '</div>';
   say(h + '<p class="note">Tap a result to open it in Spotify.</p>');
   box.querySelectorAll('[data-img]').forEach(e => { if (e.dataset.img) e.style.setProperty('--img', `url("${e.dataset.img}")`); });
+  box.dataset.f = filt;
   gb.markSaved(box);
 }
 
@@ -70,7 +73,10 @@ async function run(term) {
   const n = ++seq;
   say('<p class="note">Searching…</p>');
   try {
-    const d = await gb.api('/search?' + new URLSearchParams({ q: term, type: 'track,artist,album', limit: 10 }));
+    const find = type => gb.api('/search?' + new URLSearchParams({ q: term, type, limit: 10 }));
+    let d;
+    try { d = await find('track,artist,album,playlist'); }
+    catch (e) { if (e.message !== '400' && e.message !== '403') throw e; d = await find('track,artist,album'); }
     if (n === seq) { show(d); saveRecent(term); }
   } catch (e) {
     if (n !== seq) return;
@@ -100,5 +106,11 @@ box.addEventListener('click', e => {
   if (r.dataset.clear) { try { localStorage.removeItem(RK); } catch {} return say(hint()); }
   $q('#q').value = r.dataset.t;
   run(r.dataset.t);
+});
+box.addEventListener('click', e => {
+  const f = e.target.closest('.fil .tab');
+  if (!f) return;
+  filt = f.dataset.f; box.dataset.f = filt;
+  box.querySelectorAll('.fil .tab').forEach(b => b.setAttribute('aria-pressed', b === f));
 });
 })();

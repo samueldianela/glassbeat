@@ -16,6 +16,7 @@ let player = null, deviceId = null, sdkP = null, mode = 'sdk', pt = null, releas
 let curUri = null, histUri = null, lastPush = 0, lastSave = 0, remoteDev = null, restored = null;
 let list = [], origList = [], ctx = null, shuffleOn = false, shuffleMode = 'api', repeatM = 'off';
 let meta = { title: '', artist: '', img: '' };
+let now = {};   // artist and album of the current song
 let S = { playing: false, pos: 0, len: 1, t0: 0 };
 const raw = () => S.pos + (S.playing ? (Date.now() - S.t0) / 1000 : 0);
 const cur = () => Math.min(raw(), S.len);
@@ -94,6 +95,8 @@ function onState(s) {
   if (released || !t) return;
   mode = 'sdk';
   track(t.uri);
+  const idOf = u => String(u || '').split(':')[2] || '', a0 = (t.artists || [])[0] || {};
+  now = { artistId: idOf(a0.uri), artistName: a0.name || '', albumId: idOf((t.album || {}).uri), albumName: (t.album || {}).name || '' };
   syncExtras(s.shuffle, ['off', 'context', 'track'][s.repeat_mode] || 'off');
   push({ title: t.name, artist: artists(t), img: pic(t.album && t.album.images), playing: !s.paused, pos: s.position / 1000, len: s.duration / 1000 });
 }
@@ -152,6 +155,8 @@ async function poll() {
     if (!t) stopped();
     else if (!released) {
       track(t.uri);
+      const a0 = (t.artists || [])[0] || {};
+      now = { artistId: a0.id || '', artistName: a0.name || '', albumId: (t.album || {}).id || '', albumName: (t.album || {}).name || '' };
       syncExtras(s.shuffle_state, s.repeat_state);
       push({ title: t.name, artist: artists(t), img: pic(t.album && t.album.images), playing: !!s.is_playing, pos: (s.progress_ms || 0) / 1000, len: (t.duration_ms || 1) / 1000 });
     }
@@ -236,6 +241,18 @@ Object.assign(sp, {
     try { mode === 'sdk' ? player.pause() : gb.api('/me/player/pause', 'PUT').catch(() => {}); } catch {}
   }
 });
+
+Object.assign(sp, {
+  info: () => ({ ...now, uri: curUri, title: meta.title, artist: meta.artist, img: meta.img, len: S.len, pos: cur(), playing: S.playing }),
+  volume: v => (mode === 'sdk' && player) ? player.setVolume(v / 100) : gb.api('/me/player/volume?volume_percent=' + Math.round(v) + dev(), 'PUT'),
+  pauseNow() { if (S.playing && !restored) sp.toggle(); }
+});
+// Play a list in random order
+gb.playShuffled = uris => {
+  if (!uris || !uris.length) return;
+  shuffleOn = true; shuffleMode = 'local'; syncExtras();
+  return play(uris[Math.floor(Math.random() * uris.length)], uris);
+};
 
 // The heart in the player saves the current Spotify song
 const likes = () => [...document.querySelectorAll('.like')];

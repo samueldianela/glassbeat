@@ -58,7 +58,8 @@ const loaders = {
   async tracks() {
     const d = await gb.api('/me/tracks?limit=50');
     const l = (d.items || []).map(i => i.track).filter(Boolean);
-    say(l.length ? list(l.map(x => trackRow(x, true))) : note('No saved songs yet. Tap the heart on a song in Search.'));
+    say(l.length ? '<div class="dact"><button class="login glass" id="lplay">Play</button><button class="login glass" id="lshuf">Shuffle</button></div>' + list(l.map(x => trackRow(x, true))) : note('No saved songs yet. Tap the heart on a song in Search.'));
+    if (l.length) { const u = l.map(x => x.uri); $('#lplay').onclick = () => gb.play(u[0], u); $('#lshuf').onclick = () => gb.playShuffled(u); }
   },
   async albums() {
     const d = await gb.api('/me/albums?limit=50');
@@ -72,12 +73,21 @@ const loaders = {
   }
 };
 
+function addFilter() {
+  const lst = out.querySelector('.list');
+  if (!lst || lst.children.length < 6) return;
+  lst.insertAdjacentHTML('beforebegin', '<input class="lfilter glass" type="search" placeholder="Filter this list" aria-label="Filter this list">');
+  out.querySelector('.lfilter').oninput = e => {
+    const q = e.target.value.trim().toLowerCase();
+    [...lst.children].forEach(r => { r.hidden = !!q && !r.textContent.toLowerCase().includes(q); });
+  };
+}
 async function show(t) {
   tab = t;
   document.querySelectorAll('#ltabs .tab').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === t));
   if (!gb.signedIn()) return needLogin();
   say(note('Loading…'));
-  try { await loaders[t](); } catch (e) { fail(e); }
+  try { await loaders[t](); addFilter(); } catch (e) { fail(e); }
 }
 
 async function detail(id, name) {

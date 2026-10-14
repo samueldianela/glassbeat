@@ -216,3 +216,15 @@ html{font-size:clamp(16px,calc(12px + .9vmin),28px)}
 #dev{color:var(--muted)}
 .item .rm{color:var(--muted)}
 button.tile{font:inherit;color:inherit;text-align:left;width:100%}
+
+/* Search filters, library filter, player menu */
+.fil{margin:14px 0 2px}
+#sres[data-f=songs] [data-sec]:not([data-sec=songs]),#sres[data-f=artists] [data-sec]:not([data-sec=artists]),#sres[data-f=albums] [data-sec]:not([data-sec=albums]),#sres[data-f=playlists] [data-sec]:not([data-sec=playlists]){display:none}
+.lfilter{width:100%;padding:.7rem 1.1rem;border-radius:99px;margin-bottom:.75rem;font:inherit;font-size:1rem;color:var(--text);outline:0}
+.lfilter::placeholder{color:var(--muted)}
+#more[aria-pressed=true]{color:var(--text)}
+.vrow{display:flex;align-items:center;gap:.6rem;padding:.4rem .6rem 1rem;color:var(--muted)}
+.sheetp input[type=range]{flex:1;width:100%;-webkit-appearance:none;appearance:none;height:.375rem;border-radius:.375rem;background:linear-gradient(90deg,var(--text) var(--p,0%),rgba(255,255,255,.18) var(--p,0%))}
+.sheetp input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:1.1rem;height:1.1rem;border-radius:50%;background:#fff}
+.sheetp input[type=range]::-moz-range-thumb{width:1.1rem;height:1.1rem;border:0;border-radius:50%;background:#fff}
+.opt small{display:block;color:var(--muted);font-weight:400;margin-top:.15rem}

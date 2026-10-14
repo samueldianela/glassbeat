@@ -1,6 +1,6 @@
 // Placeholder content only. Replace with your own titles and cover images.
 const items = [
-  { type: 'music',   title: 'Six Forty Seven',    sub: 'Single, Instupendo', artist: 'Instupendo', src: 'music/six-forty-seven.mp3' },
+  { type: 'music',   title: 'Late night drive',   sub: 'Playlist' },
   { type: 'music',   title: 'Morning light',      sub: 'Album, Artist name' },
   { type: 'podcast', title: 'Short stories',      sub: 'Podcast, Host name' },
   { type: 'music',   title: 'Study loops',        sub: 'Playlist' },

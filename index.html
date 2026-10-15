@@ -12,6 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
+<script>try{if(localStorage.getItem("gb_theme")==="light"){document.documentElement.dataset.theme="light";document.querySelector("meta[name=theme-color]").content="#f1f3fb"}}catch(e){}</script>
 </head>
 <body>
 
@@ -51,8 +52,7 @@
     <h1 id="greeting">Good evening</h1>
     <div class="acct">
       <button class="login glass" id="login" hidden>Log in with Spotify</button>
-      <button class="avatar glass" id="avatar" aria-label="Your profile" aria-expanded="false" hidden><svg class="ic"><use href="#i-user"/></svg></button>
-      <div class="menu glass" id="menu" hidden><strong id="uname"></strong><button id="logout">Log out</button></div>
+      <button class="avatar glass" id="avatar" aria-label="Settings" aria-haspopup="dialog" hidden><svg class="ic"><use href="#i-user"/></svg></button>
     </div>
   </header>
 
@@ -133,6 +133,25 @@
 </section>
 
 <div class="toast glass" id="toast" role="status" hidden></div>
+<section class="settings" id="settings" aria-hidden="true" aria-label="Settings">
+  <div class="spanel">
+    <div class="shead">
+      <button class="ib" id="sclose" aria-label="Close settings"><svg class="ic"><use href="#i-x"/></svg></button>
+      <h1>Settings</h1>
+    </div>
+    <div class="sprofile glass">
+      <div class="avatar glass" id="sav"><svg class="ic"><use href="#i-user"/></svg></div>
+      <div><strong id="sname">Not logged in</strong><span id="smeta"></span></div>
+    </div>
+    <div class="sgroup glass">
+      <div class="srow">
+        <div><strong>Light mode</strong><span>Use a light look instead of the dark one</span></div>
+        <button class="switch" id="lightsw" role="switch" aria-checked="false" aria-label="Light mode"><i></i></button>
+      </div>
+    </div>
+    <button class="slogout glass" id="slogout">Log out</button>
+  </div>
+</section>
 <script src="script.js"></script>
 <script src="spotify.js"></script>
 <script src="search.js"></script>
@@ -140,6 +159,7 @@
 <script src="player.js"></script>
 <script src="browse.js"></script>
 <script src="more.js"></script>
+<script src="settings.js"></script>
 <script src="lyrics.js"></script>
 <script src="home.js"></script>
 <script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>

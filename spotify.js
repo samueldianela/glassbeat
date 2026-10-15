@@ -71,7 +71,7 @@ async function api(path, method = 'GET', body) {
   if (!txt) return null;
   try { return JSON.parse(txt); } catch { return null; }   // some Spotify player commands answer with plain text
 }
-window.gb = { api, login, token: access, signedIn: () => !!store.get('access') };
+window.gb = { api, login, token: access, signedIn: () => !!store.get('access'), logout: () => logout() };
 
 function logout(silent) {
   ['access', 'refresh', 'expires', 'verifier'].forEach(k => store.del(k));
@@ -83,7 +83,6 @@ function show(me) {
   const av = el('#avatar');
   el('#login').hidden = !!me;
   av.hidden = !me;
-  el('#menu').hidden = true;
   av.style.backgroundImage = '';
   av.classList.remove('has-img');
   const first = me && (me.display_name || '').split(' ')[0];
@@ -91,19 +90,13 @@ function show(me) {
   if (!me) { gb.me = null; window.dispatchEvent(new Event('gb:signedout')); return; }
   gb.me = me;
   window.dispatchEvent(new Event('gb:signedin'));
-  el('#uname').textContent = me.display_name || 'Your profile';
   const img = me.images && me.images[0];
   if (img) { av.style.backgroundImage = `url("${img.url}")`; av.classList.add('has-img'); }
 }
 
 async function init() {
   el('#login').onclick = login;
-  el('#logout').onclick = () => logout();
-  el('#avatar').onclick = () => {
-    const m = el('#menu'); m.hidden = !m.hidden;
-    el('#avatar').setAttribute('aria-expanded', !m.hidden);
-  };
-  document.addEventListener('click', e => { if (!e.target.closest('.acct')) el('#menu').hidden = true; });
+  el('#avatar').onclick = () => window.dispatchEvent(new Event('gb:settings'));
 
   const q = new URLSearchParams(location.search);
   if (q.get('error')) toast('Spotify login was cancelled.');

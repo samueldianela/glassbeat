@@ -16,7 +16,7 @@ function panel(html, onclick) {
   dlg.innerHTML = '<div class="sheetp glass">' + html + '</div>';
   dlg.firstChild.onclick = onclick;
 }
-const mark = () => $('#more').setAttribute('aria-pressed', !!(sleep.at || sleep.end));
+const mark = () => $('more') && $('more').setAttribute('aria-pressed', !!(sleep.at || sleep.end));
 
 function menu() {
   const i = gb.sp.info();
@@ -26,6 +26,7 @@ function menu() {
   panel(`<h2>${esc(i.title || 'Now playing')}</h2><p class="note">${esc(i.artist || '')}</p>
     <label class="vrow"><svg class="ic"><use href="#i-vol"/></svg><input type="range" id="mvol" min="0" max="100" value="${v}" style="--p:${v}%" aria-label="Volume"></label>
     <button class="opt" data-a="queue">Up next</button>
+    ${i.uri ? '<button class="opt" data-a="addqueue">Add to queue</button>' : ''}
     <button class="opt" data-a="sleep">Sleep timer${left}</button>
     ${i.artistId ? '<button class="opt" data-a="artist">Go to artist</button>' : ''}
     ${i.albumId ? '<button class="opt" data-a="album">Go to album</button>' : ''}
@@ -46,6 +47,13 @@ function onMenu(e) {
   const a = o.dataset.a, i = gb.sp.info();
   if (a === 'close') return close();
   if (a === 'queue') return queue();
+  if (a === 'addqueue') {
+    if (!i.uri) return;
+    close();
+    return gb.api('/me/player/queue?uri=' + encodeURIComponent(i.uri), 'POST')
+      .then(() => toast('Added to queue'))
+      .catch(er => toast('Could not add to queue (error ' + er.message + ').'));
+  }
   if (a === 'sleep') return sleepMenu();
   close();
   if (a === 'share') return gb.share(i.title, 'https://open.spotify.com/track/' + String(i.uri).split(':')[2]);
@@ -58,7 +66,6 @@ function onMenu(e) {
   document.body.appendChild(b); b.click(); b.remove();
 }
 
-// Spotify has no "clear queue" command, so skip past every queued song, then restart the current one on its own
 async function clearQueue() {
   const i = gb.sp.info();
   if (!i.uri) return toast('Play a song first.');
@@ -125,7 +132,8 @@ setInterval(() => {
   }
 }, 1000);
 
-$('#more').onclick = () => {
+const moreBtn = document.getElementById('more');
+if (moreBtn) moreBtn.onclick = () => {
   if (!gb.sp || !gb.sp.active) return toast('Play a Spotify song first.');
   menu();
 };

@@ -130,6 +130,24 @@ async function playlist(a) {
       setTimeout(() => { if (!$('#view-library').hidden) gb.openLibrary(); }, 50);
     } catch (e) { toast('Could not remove it (error ' + e.message + ').'); }
   };
+  // Make public / Make private toggle for own playlists
+  if (own) {
+    const pb = document.createElement('button');
+    pb.className = 'login glass'; pb.id = 'dpub'; pb.textContent = '…';
+    $('#dplay').parentElement.appendChild(pb);
+    gb.api('/playlists/' + encodeURIComponent(a.id) + '?fields=public')
+      .then(d => { const p = !!(d && d.public); pb.textContent = p ? 'Make private' : 'Make public'; pb.dataset.pub = p ? '1' : '0'; })
+      .catch(() => { pb.hidden = true; });
+    pb.onclick = async () => {
+      const making = pb.dataset.pub !== '1';
+      try {
+        await gb.api('/playlists/' + encodeURIComponent(a.id), 'PUT', { public: making });
+        pb.dataset.pub = making ? '1' : '0';
+        pb.textContent = making ? 'Make private' : 'Make public';
+        toast(making ? 'Playlist is now public' : 'Playlist is now private');
+      } catch (e) { toast('Could not update it (error ' + e.message + ').'); }
+    };
+  }
   try {
     const d = await gb.api(`/playlists/${encodeURIComponent(a.id)}/items?limit=50`);
     const l = (d.items || []).map(i => i.item || i.track).filter(x => x && String(x.uri).startsWith('spotify:track'));

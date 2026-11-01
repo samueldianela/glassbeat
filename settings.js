@@ -31,49 +31,45 @@ function applyCrossfade(val) {
 function applyAutoplay(on) {
   pstore.set('gb_autoplay', on ? '1' : '0');
   window.glassAutoplay = on;
-  const sw = $('autoplaysw'); if (sw) sw.setAttribute('aria-checked', on);
+  const sw = $('autoplaysw'); if (sw) sw.setAttribute('aria-checked', on ? 'true' : 'false');
 }
 
 function applyExplicit(on) {
   pstore.set('gb_explicit', on ? '1' : '0');
   window.glassExplicit = on;
-  const sw = $('explicitsw'); if (sw) sw.setAttribute('aria-checked', on);
+  const sw = $('explicitsw'); if (sw) sw.setAttribute('aria-checked', on ? 'true' : 'false');
 }
 
 function applyGapless(on) {
   pstore.set('gb_gapless', on ? '1' : '0');
-  const sw = $('gaplesssw'); if (sw) sw.setAttribute('aria-checked', on);
+  const sw = $('gaplesssw'); if (sw) sw.setAttribute('aria-checked', on ? 'true' : 'false');
 }
 
+// Inject extra settings sections — matches the .sgroup glass / .srow / .switch <i> structure from index.html
 function injectSections() {
   if (document.getElementById('autoplaysw')) return;
   const extra = document.createElement('div');
-  extra.innerHTML = `
-<div class="sset">
-  <p class="shead">Playback</p>
-  <label class="srow"><span>Autoplay</span><button class="tog" id="autoplaysw" role="switch" aria-checked="true"></button></label>
-  <label class="srow"><span>Gapless playback</span><button class="tog" id="gaplesssw" role="switch" aria-checked="true"></button></label>
-  <div class="srow col">
-    <span>Crossfade</span>
-    <div class="xfrow">
-      <span class="xfl">0s</span>
-      <input type="range" id="xfade" min="0" max="12" step="1" value="0" aria-label="Crossfade seconds">
-      <span class="xfl" id="xflabel">0s</span>
-    </div>
-  </div>
-  <div class="srow col">
-    <span>Volume level</span>
-    <div class="vlevels">
-      <button class="vlev" data-vlevel="quiet" role="radio" aria-checked="false">Quiet</button>
-      <button class="vlev" data-vlevel="normal" role="radio" aria-checked="true">Normal</button>
-      <button class="vlev" data-vlevel="loud" role="radio" aria-checked="false">Loud</button>
-    </div>
-  </div>
-</div>
-<div class="sset">
-  <p class="shead">Content</p>
-  <label class="srow"><span>Allow explicit content</span><button class="tog" id="explicitsw" role="switch" aria-checked="true"></button></label>
-</div>`;
+  extra.innerHTML =
+    '<div class="sgroup glass">' +
+      '<div class="srow"><div><strong>Autoplay</strong><span>Similar content plays when your listening ends</span></div>' +
+        '<button class="switch" id="autoplaysw" role="switch" aria-checked="true" aria-label="Autoplay"><i></i></button></div>' +
+      '<div class="srow"><div><strong>Gapless playback</strong><span>Removes gaps between tracks</span></div>' +
+        '<button class="switch" id="gaplesssw" role="switch" aria-checked="true" aria-label="Gapless playback"><i></i></button></div>' +
+      '<div class="srow" style="flex-direction:column;align-items:flex-start;gap:8px">' +
+        '<div><strong>Crossfade</strong> &mdash; <span id="xflabel">0s</span></div>' +
+        '<input type="range" id="xfade" min="0" max="12" step="1" value="0" style="width:100%" aria-label="Crossfade seconds"></div>' +
+      '<div class="srow" style="flex-direction:column;align-items:flex-start;gap:8px">' +
+        '<div><strong>Volume level</strong></div>' +
+        '<div style="display:flex;gap:6px">' +
+          '<button class="login glass vlev" data-vlevel="quiet" role="radio" aria-checked="false">Quiet</button>' +
+          '<button class="login glass vlev" data-vlevel="normal" role="radio" aria-checked="true">Normal</button>' +
+          '<button class="login glass vlev" data-vlevel="loud" role="radio" aria-checked="false">Loud</button>' +
+        '</div></div>' +
+    '</div>' +
+    '<div class="sgroup glass">' +
+      '<div class="srow"><div><strong>Allow explicit content</strong><span>Explicit tracks labelled E are playable</span></div>' +
+        '<button class="switch" id="explicitsw" role="switch" aria-checked="true" aria-label="Allow explicit content"><i></i></button></div>' +
+    '</div>';
   $('slogout').before(extra);
 
   $('autoplaysw').onclick = () => applyAutoplay($('autoplaysw').getAttribute('aria-checked') !== 'true');
@@ -98,7 +94,7 @@ function open() {
   const av = $('sav');
   $('sname').textContent = me ? (me.display_name || 'Spotify user') : 'Not logged in';
   $('smeta').textContent = me ? 'Logged in with Spotify' : 'Log in to use Glassbeat';
-  av.style.backgroundImage = img ? `url("${img.url}")` : '';
+  av.style.backgroundImage = img ? 'url("' + img.url + '")' : '';
   av.classList.toggle('has-img', !!img);
   $('slogout').hidden = !me;
   panel.classList.add('open');

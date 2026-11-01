@@ -16,13 +16,12 @@ let player = null, deviceId = null, sdkP = null, mode = 'sdk', pt = null, releas
 let curUri = null, histUri = null, lastPush = 0, lastSave = 0, remoteDev = null, restored = null;
 let list = [], origList = [], ctx = null, shuffleOn = false, shuffleMode = 'api', repeatM = 'off';
 let meta = { title: '', artist: '', img: '' };
-let now = {};   // artist and album of the current song
+let now = {};
 let S = { playing: false, pos: 0, len: 1, t0: 0 };
 const raw = () => S.pos + (S.playing ? (Date.now() - S.t0) / 1000 : 0);
 const cur = () => Math.min(raw(), S.len);
 const shuffled = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 
-// ---------- Remembering: current song and history survive a refresh ----------
 function save(force) {
   if (!curUri || (!force && Date.now() - lastSave < 2000)) return;
   lastSave = Date.now();
@@ -34,7 +33,6 @@ function remember(o) {
   write(HK, h.slice(0, 40));
 }
 
-// ---------- Showing state ----------
 const ms = navigator.mediaSession;
 let lastTitle = null;
 function media(o) {
@@ -56,7 +54,6 @@ function push(o) {
   media(o);
   save();
 }
-// Spotify stopped (or ended): make the bar, lyrics and buttons stop too
 function stopped() {
   if (!S.playing) return;
   S.pos = cur(); S.playing = false;
@@ -64,7 +61,7 @@ function stopped() {
   media({ playing: false });
   save(true);
 }
-let lock = 0;   // right after you press shuffle or repeat, ignore older state that Spotify may still be reporting
+let lock = 0;
 function syncExtras(shuffle, repeat) {
   const fresh = Date.now() >= lock;
   if (shuffle != null && shuffleMode !== 'local' && fresh) shuffleOn = !!shuffle;
@@ -86,10 +83,10 @@ function fail(e) {
     : m === '429' ? 'Too many requests. Wait a moment and try again.'
     : m === '404' ? 'Spotify has no active player. Start a song first, then try again.'
     : m === 'signed out' ? 'Please log in again.'
+    : m === 'timeout' ? 'Spotify is taking too long to respond. Check your connection and try again.'
     : 'Spotify could not do that (error ' + m + d + ').');
 }
 
-// ---------- In-page player ----------
 function onState(s) {
   const t = s.track_window && s.track_window.current_track;
   if (released || !t) return;
@@ -133,7 +130,6 @@ const waitDevice = () => new Promise(r => {
   const iv = setInterval(() => { if (deviceId || Date.now() - t0 > 3000) { clearInterval(iv); r(); } }, 100);
 });
 
-// ---------- Fallback: control the Spotify app on this device ----------
 async function remote(body) {
   try { await gb.api('/me/player/play', 'PUT', body); }
   catch (e) {
@@ -167,7 +163,6 @@ const start = body => (mode === 'sdk' && deviceId)
   ? gb.api('/me/player/play?device_id=' + encodeURIComponent(deviceId), 'PUT', body)
   : remote(body);
 
-// Check again that Spotify is really still playing (every few seconds, and when you come back to the page)
 async function reconcile() {
   if (released || !sp.active) return;
   if (mode === 'remote') return poll();
@@ -182,7 +177,6 @@ setInterval(() => { if (S.playing) reconcile(); }, 3000);
 document.addEventListener('visibilitychange', () => { if (document.hidden) save(true); else reconcile(); });
 addEventListener('pagehide', () => save(true));
 
-// ---------- Playing ----------
 async function play(uri, uris, c, startMs) {
   restored = null; released = false;
   const many = !c && uris && uris.length > 1;
@@ -190,7 +184,7 @@ async function play(uri, uris, c, startMs) {
   list = origList.slice();
   if (many && shuffleOn && shuffleMode === 'local') list = [uri, ...shuffled(origList.filter(u => u !== uri))];
   ctx = c || null;
-  if (uri) curUri = null;   // re-read the heart state for the new song
+  if (uri) curUri = null;
   const body = c ? { context_uri: c, ...(uri ? { offset: { uri } } : {}) }
     : list.length > 1 ? { uris: list, offset: { uri } } : { uris: [uri] };
   if (startMs > 0) body.position_ms = Math.round(startMs);
@@ -247,20 +241,22 @@ Object.assign(sp, {
   volume: v => (mode === 'sdk' && player) ? player.setVolume(v / 100) : gb.api('/me/player/volume?volume_percent=' + Math.round(v) + dev(), 'PUT'),
   pauseNow() { if (S.playing && !restored) sp.toggle(); }
 });
-// Play a list in random order
 gb.playShuffled = uris => {
   if (!uris || !uris.length) return;
   shuffleOn = true; shuffleMode = 'local'; syncExtras();
   return play(uris[Math.floor(Math.random() * uris.length)], uris);
 };
 
-// The heart in the player saves the current Spotify song
+// trackSeq guards against out-of-order heart state on rapid track skips.
 const likes = () => [...document.querySelectorAll('.like')];
+let trackSeq = 0;
 function track(uri) {
   if (!uri || uri === curUri) return;
   curUri = uri;
+  const n = ++trackSeq;
   gb.api('/me/library/contains?uris=' + encodeURIComponent(uri))
-    .then(v => likes().forEach(l => l.setAttribute('aria-pressed', !!(v && v[0])))).catch(() => {});
+    .then(v => { if (n === trackSeq) likes().forEach(l => l.setAttribute('aria-pressed', !!(v && v[0]))); })
+    .catch(() => {});
 }
 likes().forEach(b => b.addEventListener('click', e => {
   if (!sp.active || !curUri) return;
@@ -268,13 +264,11 @@ likes().forEach(b => b.addEventListener('click', e => {
   gb.toggleSave(curUri, b).then(() => { const on = b.getAttribute('aria-pressed'); likes().forEach(l => l.setAttribute('aria-pressed', on)); });
 }, true));
 
-// ---------- Shuffle and repeat ----------
 const shuf = el('shuffle'), rep = el('repeat');
 const dev = () => { const id = mode === 'sdk' ? deviceId : remoteDev; return id ? '&device_id=' + encodeURIComponent(id) : ''; };
 const need = () => restored ? (toast('Press play first, then use shuffle and repeat.'), false)
   : sp.active || (toast('Shuffle and repeat work while a Spotify song is playing.'), false);
 
-// Spotify sometimes refuses shuffle (for example for a short list). Then we shuffle our own list instead.
 async function setShuffle(on) {
   try { await gb.api('/me/player/shuffle?state=' + on + dev(), 'PUT'); shuffleMode = 'api'; return; }
   catch (e) { if (!(origList.length > 1 && curUri)) throw e; }
@@ -305,7 +299,6 @@ rep.onclick = async () => {
   save(true);
 };
 
-// ---------- Lock screen, headphone buttons and the space bar ----------
 if (ms) {
   const h = (a, f) => { try { ms.setActionHandler(a, f); } catch {} };
   h('play', () => { if (sp.active && !S.playing) sp.toggle(); });
@@ -320,7 +313,6 @@ document.addEventListener('keydown', e => {
   document.querySelector('.mini .play').click();
 });
 
-// ---------- Play on another device ----------
 el('dev').onclick = async () => {
   let devices;
   try { devices = ((await gb.api('/me/player/devices')) || {}).devices || []; } catch (e) { return fail(e); }
@@ -347,7 +339,6 @@ el('dev').onclick = async () => {
   document.body.appendChild(dlg);
 };
 
-// ---------- Bring back what you were playing before the refresh ----------
 (function restore() {
   const s = read(SK, null);
   if (!s || !s.uri) return;

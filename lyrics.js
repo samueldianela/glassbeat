@@ -23,14 +23,26 @@ function render(d) {
   panel.innerHTML = rows.map((s, i) => `<p class="ly" data-i="${i}">${esc(s) || '&nbsp;'}</p>`).join('') + note('Lyrics from LRCLIB');
   panel.scrollTop = 0;
 }
+
+// 10s timeout; AbortError returns null so lyrics panel fails gracefully.
 async function find(t, a, dur) {
   const base = { track_name: t, artist_name: a };
-  let r = await fetch('https://lrclib.net/api/get?' + new URLSearchParams(dur ? { ...base, duration: dur } : base));
-  if (r.ok) return r.json();
-  r = await fetch('https://lrclib.net/api/search?' + new URLSearchParams(base));
-  const arr = r.ok ? await r.json() : [];
-  return (arr || []).find(x => x.syncedLyrics) || (arr || [])[0] || null;
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    let r = await fetch('https://lrclib.net/api/get?' + new URLSearchParams(dur ? { ...base, duration: dur } : base), { signal: ctrl.signal });
+    if (r.ok) { clearTimeout(tid); return r.json(); }
+    r = await fetch('https://lrclib.net/api/search?' + new URLSearchParams(base), { signal: ctrl.signal });
+    const arr = r.ok ? await r.json() : [];
+    clearTimeout(tid);
+    return (arr || []).find(x => x.syncedLyrics) || (arr || [])[0] || null;
+  } catch (e) {
+    clearTimeout(tid);
+    if (e.name === 'AbortError') return null;
+    throw e;
+  }
 }
+
 async function load() {
   const t = title(), a = artist(), k = t + '|' + a;
   if (!t || k === key) return;
@@ -43,7 +55,6 @@ async function load() {
   } catch { key = ''; if (n === seq) panel.innerHTML = note('Could not load lyrics.'); }
 }
 
-// Highlight the current line while the song plays
 setInterval(() => {
   if (!on || !lines.length) return;
   const p = +seek.value + 0.3;

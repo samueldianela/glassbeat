@@ -9,7 +9,6 @@ const view = $('#view-detail');
 const views = ['#view-home', '#view-search', '#view-library'];
 let prev = null, hist = [], current = null;
 
-// Open a page; Back returns to the previous page, then to the screen you came from
 function go(fn) {
   if (view.hidden) { prev = views.map($).find(v => !v.hidden) || null; if (prev) prev.hidden = true; view.hidden = false; }
   else hist.push(current);
@@ -35,19 +34,31 @@ function head(a, kind, ctx) {
   if (canSave) saveInit(ctx, kind);
   paint();
 }
+
+// Artists use /me/following — /me/library only accepts track/episode URIs.
 async function saveInit(uri, kind) {
   const b = $('#dsave');
   if (!b) return;
   const word = kind === 'Artist' ? ['Follow', 'Following'] : ['Save', 'Saved'];
   const set = on => { b.dataset.on = on ? '1' : '0'; b.textContent = word[on ? 1 : 0]; };
-  try { const v = await gb.api('/me/library/contains?uris=' + encodeURIComponent(uri)); set(!!(v && v[0])); b.hidden = false; }
-  catch { return; }
+  const isArtist = kind === 'Artist';
+  const artistId = isArtist ? uri.split(':')[2] : null;
+  try {
+    const v = isArtist
+      ? await gb.api('/me/following/contains?type=artist&ids=' + encodeURIComponent(artistId))
+      : await gb.api('/me/library/contains?uris=' + encodeURIComponent(uri));
+    set(!!(v && v[0])); b.hidden = false;
+  } catch { return; }
   b.onclick = async () => {
     const on = b.dataset.on === '1';
     try {
-      await gb.api('/me/library?uris=' + encodeURIComponent(uri), on ? 'DELETE' : 'PUT');
+      if (isArtist) {
+        await gb.api('/me/following?type=artist&ids=' + encodeURIComponent(artistId), on ? 'DELETE' : 'PUT');
+      } else {
+        await gb.api('/me/library?uris=' + encodeURIComponent(uri), on ? 'DELETE' : 'PUT');
+      }
       set(!on);
-      toast(on ? 'Removed from your library' : kind === 'Artist' ? 'Following' : 'Saved to your library');
+      toast(on ? (isArtist ? 'Unfollowed' : 'Removed from your library') : (isArtist ? 'Following' : 'Saved to your library'));
     } catch (e) { toast('Could not update it (error ' + e.message + ').'); }
   };
 }
@@ -56,7 +67,6 @@ const body = h => { const b = $('#dbody'); if (!b) return; b.innerHTML = h; pain
 const fail = e => body(note(e.message === '429' ? 'Too many requests. Wait a moment and try again.' : e.message === 'signed out' ? 'Please log in again.' : 'Could not load this page (error ' + e.message + '). Try again.'));
 
 const row = (x, cover, rm) => `<div class="item glass" data-uri="${esc(x.uri)}"><button class="open" aria-label="Play ${esc(x.name)}"><div class="art sm" data-img="${esc(cover)}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc(names(x))}</span></div></button><a class="ib ext" href="${esc((x.external_urls || {}).spotify || '#')}" target="_blank" rel="noopener" aria-label="Open in Spotify"><svg class="ic"><use href="#i-ext"/></svg></a><button class="ib sv" aria-label="Save to library" aria-pressed="false"><svg class="ic"><use href="#i-heart"/></svg></button><button class="ib ad" aria-label="Add to playlist"><svg class="ic"><use href="#i-plus"/></svg></button>${rm ? '<button class="ib rm" aria-label="Remove from playlist"><svg class="ic"><use href="#i-x"/></svg></button>' : ''}</div>`;
-
 const albumRow = x => `<button class="item glass opn" data-kind="album" data-id="${esc(x.id)}" data-name="${esc(x.name)}" data-sub="${esc('Album, ' + names(x))}" data-cover="${esc(pic(x.images))}" data-url="${esc((x.external_urls || {}).spotify || '')}"><div class="art sm" data-img="${esc(pic(x.images))}"></div><div class="meta"><strong>${esc(x.name)}</strong><span>${esc((x.release_date || '').slice(0, 4))}</span></div></button>`;
 
 async function album(a) {
@@ -147,7 +157,6 @@ view.addEventListener('click', e => {
   const b = e.target.closest('.sv, .ad');
   if (b) { const uri = b.closest('.item').dataset.uri; b.classList.contains('sv') ? gb.toggleSave(uri, b) : gb.pickPlaylist(uri); }
 });
-// Any album or artist card or row (Search, Library, artist page) opens its page
 document.addEventListener('click', e => {
   const o = e.target.closest('.opn');
   if (!o) return;

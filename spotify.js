@@ -44,24 +44,43 @@ async function token(params) {
   if (d.refresh_token) store.set('refresh', d.refresh_token);
 }
 
+// Refresh lock: concurrent access() calls share one in-flight refresh, preventing
+// the second call from using the already-rotated refresh token and triggering a logout.
+let refreshP = null;
 async function access() {
   if (!store.get('access')) return null;
   if (Date.now() > +store.get('expires')) {
-    try { await token({ grant_type: 'refresh_token', refresh_token: store.get('refresh') }); }
+    if (!refreshP) {
+      refreshP = token({ grant_type: 'refresh_token', refresh_token: store.get('refresh') })
+        .finally(() => { refreshP = null; });
+    }
+    try { await refreshP; }
     catch { logout(true); return null; }
   }
   return store.get('access');
 }
 
 // Used by every later step: await gb.api('/me'), or gb.api(path, 'POST', {json})
+// 15s AbortController timeout prevents hung requests from freezing the UI.
 async function api(path, method = 'GET', body) {
   const t = await access();
   if (!t) throw new Error('signed out');
-  const r = await fetch('https://api.spotify.com/v1' + path, {
-    method,
-    headers: { Authorization: 'Bearer ' + t, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    body: body ? JSON.stringify(body) : undefined
-  });
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 15000);
+  let r;
+  try {
+    r = await fetch('https://api.spotify.com/v1' + path, {
+      method,
+      signal: ctrl.signal,
+      headers: { Authorization: 'Bearer ' + t, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined
+    });
+  } catch (e) {
+    clearTimeout(tid);
+    if (e.name === 'AbortError') throw new Error('timeout');
+    throw e;
+  }
+  clearTimeout(tid);
   if (!r.ok) {
     const e = new Error(r.status);
     try { e.detail = ((await r.json()).error || {}).message; } catch {}
@@ -69,7 +88,7 @@ async function api(path, method = 'GET', body) {
   }
   const txt = await r.text();
   if (!txt) return null;
-  try { return JSON.parse(txt); } catch { return null; }   // some Spotify player commands answer with plain text
+  try { return JSON.parse(txt); } catch { return null; }
 }
 window.gb = { api, login, token: access, signedIn: () => !!store.get('access'), logout: () => logout() };
 

@@ -217,7 +217,7 @@ button.tile{font:inherit;color:inherit;text-align:left;width:100%}
 
 /* Search filters, library filter, player menu */
 .fil{margin:14px 0 2px}
-#sres[data-f=songs] [data-sec]:not([data-sec=songs]),#sres[data-f=artists] [data-sec]:not([data-sec=artists]),#sres[data-f=albums] [data-sec]:not([data-sec=albums]),#sres[data-f=playlists] [data-sec]:not([data-sec=playlists]){display:none}
+#sres[data-f=songs] [data-sec]:not([data-sec=songs]),#sres[data-f=artists] [data-sec]:not([data-sec=artists]),#sres[data-f=albums] [data-sec]:not([data-sec=albums]),#sres[data-f=playlists] [data-sec]:not([data-sec=playlists])]{display:none}
 .lfilter{width:100%;padding:.7rem 1.1rem;border-radius:99px;margin-bottom:.75rem;font:inherit;font-size:1rem;color:var(--text);outline:0}
 .lfilter::placeholder{color:var(--muted)}
 #more[aria-pressed=true]{color:var(--text)}
@@ -246,6 +246,14 @@ button.tile{font:inherit;color:inherit;text-align:left;width:100%}
 .switch[aria-checked=true]{background:linear-gradient(135deg,var(--violet),var(--aqua));border-color:transparent}
 .switch[aria-checked=true] i{transform:translateX(1.35rem)}
 .slogout{width:100%;padding:1rem;border-radius:1.5rem;font-weight:700;font-size:1rem;color:#ff8fa3}
+
+/* Volume level buttons and crossfade slider in settings */
+.vlev[aria-checked=true]{background:var(--text);color:var(--ink);border-color:transparent}
+.sgroup input[type=range]{-webkit-appearance:none;appearance:none;height:.375rem;border-radius:.375rem;background:rgba(var(--tint),.2)}
+.sgroup input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:1.1rem;height:1.1rem;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.sgroup input[type=range]::-moz-range-thumb{width:1.1rem;height:1.1rem;border:0;border-radius:50%;background:#fff}
+/* Glass dialog input */
+.sheetp .lfilter{background:rgba(var(--tint),.1);border:1px solid rgba(var(--tint),.2);border-radius:.875rem;margin-bottom:.25rem}
 
 /* Light mode */
 html[data-theme=light]{--ink:#f1f3fb;--text:#14172b;--muted:rgba(20,23,43,.6);--tint:20,23,43;color-scheme:light}

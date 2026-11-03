@@ -149,6 +149,34 @@
         <button class="switch" id="lightsw" role="switch" aria-checked="false" aria-label="Light mode"><i></i></button>
       </div>
     </div>
+    <div class="sgroup glass">
+      <div class="srow">
+        <div><strong>Autoplay</strong><span>Similar content plays when your listening ends</span></div>
+        <button class="switch" id="autoplaysw" role="switch" aria-checked="true" aria-label="Autoplay"><i></i></button>
+      </div>
+      <div class="srow">
+        <div><strong>Gapless playback</strong><span>Removes gaps between tracks</span></div>
+        <button class="switch" id="gaplesssw" role="switch" aria-checked="true" aria-label="Gapless playback"><i></i></button>
+      </div>
+      <div class="srow" style="flex-direction:column;align-items:flex-start;gap:6px">
+        <div><strong>Crossfade</strong> &mdash; <span id="xflabel">0s</span></div>
+        <input type="range" id="xfade" min="0" max="12" step="1" value="0" style="width:100%" aria-label="Crossfade seconds">
+      </div>
+      <div class="srow" style="flex-direction:column;align-items:flex-start;gap:6px">
+        <div><strong>Volume level</strong></div>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <button class="login glass vlev" data-vlevel="quiet" role="radio" aria-checked="false">Quiet</button>
+          <button class="login glass vlev" data-vlevel="normal" role="radio" aria-checked="true">Normal</button>
+          <button class="login glass vlev" data-vlevel="loud" role="radio" aria-checked="false">Loud</button>
+        </div>
+      </div>
+    </div>
+    <div class="sgroup glass">
+      <div class="srow">
+        <div><strong>Allow explicit content</strong><span>Explicit tracks labelled E are playable</span></div>
+        <button class="switch" id="explicitsw" role="switch" aria-checked="true" aria-label="Allow explicit content"><i></i></button>
+      </div>
+    </div>
     <button class="slogout glass" id="slogout">Log out</button>
   </div>
 </section>

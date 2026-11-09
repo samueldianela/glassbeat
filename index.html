@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
-<script>try{if(localStorage.getItem("gb_theme")==="light"){document.documentElement.dataset.theme="light";document.querySelector("meta[name=theme-color]").content="#f1f3fb"}}catch(e){}</script>
+<script>try{if(localStorage.getItem("gb_theme")==="light"){document.documentElement.dataset.theme="light";document.querySelector("meta[name=theme-color]").content="#f1f3fb"}document.documentElement.dataset.motion=localStorage.getItem("gb_motion")==="reduced"?"reduced":"full"}catch(e){}</script>
 </head>
 <body>
 
@@ -151,6 +151,12 @@
     </div>
     <div class="sgroup glass">
       <div class="srow">
+        <div><strong>Animations</strong><span>Interface motion, page changes and the cover flight</span></div>
+        <button class="switch" id="motionsw" role="switch" aria-checked="true" aria-label="Animations"><i></i></button>
+      </div>
+    </div>
+    <div class="sgroup glass">
+      <div class="srow">
         <div><strong>Autoplay</strong><span>Similar content plays when your listening ends</span></div>
         <button class="switch" id="autoplaysw" role="switch" aria-checked="true" aria-label="Autoplay"><i></i></button>
       </div>
@@ -182,6 +188,7 @@
 </section>
 <script src="script.js"></script>
 <script src="spotify.js"></script>
+<script src="dialog.js"></script>
 <script src="search.js"></script>
 <script src="library.js"></script>
 <script src="player.js"></script>

@@ -133,5 +133,15 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+// The browser's own menu has no place on the music surfaces: a long press or a
+// right click on a card or a row should not cover the page with Edge's menu.
+// Text fields keep theirs so paste and spellcheck still work.
+document.addEventListener('contextmenu', e => {
+  if (e.target.closest('input,textarea')) return;
+  if (e.target.closest('.card,.item,.tile,.pl,.row,.list,.mini,.sheetp,.pick,.dtop,.dact')) {
+    e.preventDefault();
+  }
+}, true);
+
 window.glassGestures = { close };
 })();

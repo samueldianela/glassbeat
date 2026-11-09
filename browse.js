@@ -115,14 +115,15 @@ async function playlist(a) {
     : '');
   const ren = $('#dren');
   if (ren) ren.onclick = async () => {
-    const n = (prompt('Rename playlist', a.name) || '').trim();
+    const n = ((await glassAsk({ title: 'Rename playlist', value: a.name, ok: 'Save' })) || '').trim();
     if (!n || n === a.name) return;
     try { await gb.api('/playlists/' + encodeURIComponent(a.id), 'PUT', { name: n }); a.name = n; $('.dname').textContent = n; toast('Renamed'); }
     catch (e) { toast('Could not rename it (error ' + e.message + ').'); }
   };
   const del = $('#ddel');
   if (del) del.onclick = async () => {
-    if (!confirm(own ? 'Delete this playlist?' : 'Remove this playlist from your library?')) return;
+    const msg = own ? 'Delete "' + a.name + '"?' : 'Remove "' + a.name + '" from your library?';
+    if (!(await glassConfirm({ title: own ? 'Delete playlist' : 'Remove playlist', message: msg, ok: own ? 'Delete' : 'Remove' }))) return;
     try {
       await gb.api('/me/library?uris=' + encodeURIComponent('spotify:playlist:' + a.id), 'DELETE');
       toast(own ? 'Playlist deleted' : 'Removed from your library');

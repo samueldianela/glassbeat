@@ -45,6 +45,12 @@ function applyGapless(on) {
   const sw = $('gaplesssw'); if (sw) sw.setAttribute('aria-checked', on ? 'true' : 'false');
 }
 
+function applyMotion(reduced) {
+  root.dataset.motion = reduced ? 'reduced' : 'full';
+  pstore.set('gb_motion', reduced ? 'reduced' : 'full');
+  const sw = $('motionsw'); if (sw) sw.setAttribute('aria-checked', reduced ? 'false' : 'true');
+}
+
 // Inject extra settings sections — matches the .sgroup glass / .srow / .switch <i> structure from index.html
 function injectSections() {
   if (document.getElementById('autoplaysw')) return;
@@ -112,11 +118,17 @@ $('lightsw').onclick = () => applyTheme($('lightsw').getAttribute('aria-checked'
 $('slogout').onclick = () => { close(); gb.logout(); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && panel.classList.contains('open')) close(); });
 
-window.glassSettings = { applyVolLevel, applyCrossfade, applyAutoplay, applyExplicit };
+window.glassSettings = { applyVolLevel, applyCrossfade, applyAutoplay, applyExplicit, applyMotion };
 
 let light = false;
 try { light = localStorage.getItem('gb_theme') === 'light'; } catch {}
 applyTheme(light);
+
+const motsw = $('motionsw');
+if (motsw) motsw.onclick = () => applyMotion(motsw.getAttribute('aria-checked') === 'true');
+let motionReduced = false;
+try { motionReduced = localStorage.getItem('gb_motion') === 'reduced'; } catch {}
+applyMotion(motionReduced);
 
 window.glassXfade    = +(pstore.get('gb_crossfade') || 0);
 window.glassVolLevel = pstore.get('gb_vol_level') || 'normal';

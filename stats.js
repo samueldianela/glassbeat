@@ -158,10 +158,10 @@ function build() {
   document.body.appendChild(panel);
 
   $('stclose').onclick = close;
-  panel.addEventListener('click', e => {
+  panel.addEventListener('click', async e => {
     if (e.target === panel) return close();
     if (e.target.closest('#sreset')) {
-      if (!confirm('Reset listening stats? This cannot be undone.')) return;
+      if (!(await glassConfirm({ title: 'Reset stats', message: 'Reset listening stats? This cannot be undone.', ok: 'Reset' }))) return;
       T = blank();
       save(true);
       $('stbody').innerHTML = body();

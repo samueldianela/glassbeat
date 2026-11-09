@@ -10,8 +10,8 @@
 (() => {
 'use strict';
 
-const calm = matchMedia('(prefers-reduced-motion: reduce)');
-const reduced = () => calm.matches;
+const root = document.documentElement;
+const reduced = () => root.dataset.motion === 'reduced';
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const clamp = (n, lo, hi) => n < lo ? lo : n > hi ? hi : n;

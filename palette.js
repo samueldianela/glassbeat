@@ -283,7 +283,7 @@ html[data-theme=light] .cbox{background:linear-gradient(160deg,rgba(255,255,255,
 .ckind{font-size:.72rem;color:var(--muted);text-transform:capitalize;flex:none}
 .cnote{margin:0;padding:.5rem 1rem .85rem;font-size:.78rem;color:var(--muted)}
 .cnone{margin:0;padding:1.25rem .85rem;font-size:.88rem;color:var(--muted);text-align:center}
-@media (prefers-reduced-motion:reduce){.cmdk{transition:none}}
+html[data-motion=reduced] .cmdk{transition:none}
 `;
 document.head.appendChild(style);
 

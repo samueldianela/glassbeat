@@ -162,7 +162,7 @@ style.textContent = [
   "@property --aqua{syntax:'<color>';inherits:true;initial-value:#35d0c8}",
   "@property --peach{syntax:'<color>';inherits:true;initial-value:#ff9e7a}",
   ".orbs i{transition:background-color 900ms cubic-bezier(.2,.8,.2,1)}",
-  "@media (prefers-reduced-motion:reduce){.orbs i{transition:none}}"
+  "html[data-motion=reduced] .orbs i{transition:none}"
 ].join('\n');
 document.head.appendChild(style);
 

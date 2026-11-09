@@ -20,7 +20,15 @@ function toast(msg) {
 
 async function login() {
   let id = clientId();
-  if (!id) { id = (prompt('Paste your Spotify Client ID') || '').trim(); if (!id) return; store.set('cid', id); }
+  if (!id) {
+    id = ((await glassAsk({
+      title: 'Spotify Client ID',
+      message: 'Paste the Client ID from your Spotify developer app.',
+      placeholder: 'Client ID', ok: 'Log in'
+    })) || '').trim();
+    if (!id) return;
+    store.set('cid', id);
+  }
   const verifier = b64(crypto.getRandomValues(new Uint8Array(48)));
   store.set('verifier', verifier);
   store.set('scopes', SCOPES);

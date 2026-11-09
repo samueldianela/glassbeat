@@ -107,7 +107,7 @@ async function detail(id, name) {
   const pp = $('#pp'); if (pp) pp.onclick = () => gb.play(null, null, 'spotify:playlist:' + id);
   const rn = $('#rn'), dl = $('#dl');
   if (rn) rn.onclick = async () => {
-    const nn = (prompt('New name', name) || '').trim();
+    const nn = ((await glassAsk({ title: 'Rename playlist', value: name, ok: 'Save' })) || '').trim();
     if (!nn || nn === name) return;
     try {
       await gb.api('/playlists/' + encodeURIComponent(id), 'PUT', { name: nn });
@@ -116,7 +116,7 @@ async function detail(id, name) {
     } catch { toast('Could not rename this playlist.'); }
   };
   if (dl) dl.onclick = async () => {
-    if (!confirm('Remove "' + name + '" from your library?')) return;
+    if (!(await glassConfirm({ title: 'Remove playlist', message: 'Remove "' + name + '" from your library?', ok: 'Remove' }))) return;
     try { await gb.api('/me/library?uris=' + encodeURIComponent('spotify:playlist:' + id), 'DELETE'); mine = []; toast('Playlist deleted'); show('playlists'); }
     catch { toast('Could not delete this playlist.'); }
   };
@@ -124,7 +124,7 @@ async function detail(id, name) {
 
 async function newPlaylist() {
   if (!gb.signedIn()) return toast('Log in with Spotify first.');
-  const name = (prompt('Name your playlist') || '').trim();
+  const name = ((await glassAsk({ title: 'New playlist', placeholder: 'Name your playlist', ok: 'Create' })) || '').trim();
   if (!name) return;
   try {
     await gb.api('/me/playlists', 'POST', { name, public: false });
